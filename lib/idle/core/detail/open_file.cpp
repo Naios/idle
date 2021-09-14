@@ -1,0 +1,47 @@
+
+/*
+ *   _____    _ _        .      .    .
+ *  |_   _|  | | |  .       .           .
+ *    | |  __| | | ___         .    .        .
+ *    | | / _` | |/ _ \                .
+ *   _| || (_| | |  __/ github.com/Naios/idle
+ *  |_____\__,_|_|\___| AGPL v3 (Early Access)
+ *
+ * Copyright(c) 2018 - 2021 Denis Blank <denis.blank at outlook dot com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include <idle/core/api.hpp>
+
+#ifdef IDLE_PLATFORM_WINDOWS
+#  include <Windows.h>
+#  include <shellapi.h>
+#endif
+
+#ifdef IDLE_PLATFORM_UNIX
+static char const* open_exe_name = "xdg-open"; // On Unix
+#else
+static char const* open_exe_name = "open"; // Also for MACOS
+#endif
+
+namespace idle {
+namespace detail {
+void open_file(char const* path) {
+#ifdef IDLE_PLATFORM_WINDOWS
+  ShellExecute(nullptr, "open", path, nullptr, nullptr, SW_SHOWMAXIMIZED);
+#endif
+}
+} // namespace detail
+} // namespace idle

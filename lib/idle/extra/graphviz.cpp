@@ -1,0 +1,632 @@
+
+/*
+ *   _____    _ _        .      .    .
+ *  |_   _|  | | |  .       .           .
+ *    | |  __| | | ___         .    .        .
+ *    | | / _` | |/ _ \                .
+ *   _| || (_| | |  __/ github.com/Naios/idle
+ *  |_____\__,_|_|\___| AGPL v3 (Early Access)
+ *
+ * Copyright(c) 2018 - 2021 Denis Blank <denis.blank at outlook dot com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include <ostream>
+#include <boost/concept/assert.hpp>
+#include <boost/config.hpp>
+#include <boost/graph/graph_concepts.hpp>
+#include <boost/graph/graph_traits.hpp>
+#include <boost/graph/graphviz.hpp>
+#include <boost/graph/properties.hpp>
+#include <boost/graph/reverse_graph.hpp>
+#include <idle/core/context.hpp>
+#include <idle/core/dep/format.hpp>
+#include <idle/core/detail/service_impl.hpp>
+#include <idle/core/detail/streams.hpp>
+#include <idle/core/external/boost/graph.hpp>
+#include <idle/core/graph.hpp>
+#include <idle/core/util/assert.hpp>
+#include <idle/core/util/range.hpp>
+#include <idle/extra/color.hpp>
+#include <idle/extra/graphviz.hpp>
+
+#ifdef _MSC_VER
+#  pragma warning(disable : 4458)
+#  pragma warning(disable : 4459)
+#endif // _MSC_VER
+
+namespace idle {
+static void escape_guid(std::ostream& os, Guid guid) {
+  os << '"' << guid.hex() << '"' << '\n';
+}
+
+static void write_tail(std::ostream& out) {
+  out << "}\n";
+}
+
+static void group_into(std::ostream& out, std::stack<Service*>& frame,
+                       Service& current) {
+  frame.push(&current);
+
+  out << "subgraph cluster_" << current.guid().hex();
+  out << " {\n";
+}
+
+static void print_cluster_style(std::ostream& out, Service& head) {
+  if (isa<Export>(head.parent()) && head.state().isManual()) {
+    out << "filled,rounded,bold";
+  } else {
+    out << "filled,rounded,dotted";
+  }
+}
+
+static void push_frame(std::ostream& out, std::stack<Service*>& frame,
+                       Service& current) {
+  group_into(out, frame, current);
+  out << "label=\"";
+
+  if (is_cluster_head(current)) {
+    out << current;
+  } else {
+    out << current.name();
+  }
+
+  if (isa<Export>(current.parent())) {
+    out << '\n';
+    out << '[' << current.guid().hex() << ']' << '\n';
+    out << current.stats().cluster();
+  }
+
+  out << "\";\n";
+  out << "style=\"";
+  print_cluster_style(out, current);
+  out << "\";\n";
+  out << "color=\"#000000\" fillcolor=\"#F0F0F0\"\n";
+}
+
+static void clear_frame(std::ostream& out, std::stack<Service*>& frame) {
+  if (!frame.empty()) {
+    do {
+      write_tail(out);
+      frame.pop();
+    } while (!frame.empty());
+
+    out << "\n";
+  }
+}
+
+static void print_node_details(std::ostream& os, Service const& n) {
+  os << n.stats().state();
+
+  os << ", " << n.stats().usage();
+
+  if (n.state().isDefaultCreated()) {
+    os << " , auto-created";
+  }
+}
+static void print_node_details(std::ostream& os, Import const& n) {
+  if (!n.isSatisfied()) {
+    os << "not satisfied";
+  }
+}
+static void print_node_details(std::ostream& os, Export const& n) {
+  if (isa<Interface>(n)) {
+    if (n.owner().state().isHidden()) {
+      os << "hidden, ";
+    } else {
+      os << "visible, ";
+    }
+  }
+
+  std::size_t references_count_ = 0U;
+  auto const dependents = n.exports();
+  for (Usage const& u : dependents) {
+    if (u.user().owner().state().isRunning()) {
+      ++references_count_;
+    }
+  }
+
+  if (references_count_) {
+    print(os, FMT_STRING("active users: {}/{}"), references_count_,
+          dependents.size());
+  } else if (!dependents.empty()) {
+    print(os, FMT_STRING("waiting: {} "), dependents.size());
+  }
+}
+
+static void print_node_name(std::ostream& os, Service const& n) {
+  os << n.name();
+}
+static void print_node_name(std::ostream& os, Part const& n) {
+  os << n.partName();
+}
+
+template <typename T>
+void print_node_properties(std::ostream& os, T& n, Color color,
+                           char const* attributes = "") {
+  os << "[label=\"" << Guid::of(n).msb() << ' ';
+  print_node_name(os, n);
+  os << '\n';
+
+  {
+    detail::comma_break_stream breaker(os);
+    print_node_details(breaker, n);
+  }
+
+  os << "\" fillcolor=\"" << color << "\" " << attributes << "]";
+}
+
+static void print_gv_graph_head(std::ostream& out) {
+  out << R"(
+  graph [
+    label="This graph was generated by idle <https://github.com/Naios/idle>"
+    fontsize=12
+    compound=true
+    concentrate=true
+    splines=true
+    rankdir=LR
+    labelloc=t
+    directed=true
+    remincross=true
+    layout=dot
+    ratio=fill
+    # size="8.3,11.7!" # Uncomment for A4 layout
+  ];
+  node [
+    fontsize=10
+    shape=rectangle
+    style=filled
+  ];
+
+  )";
+}
+
+namespace colors {
+static constexpr Color color_service_root = "#795548";
+static constexpr Color color_service_running = "#4DB6AC";
+static constexpr Color color_service_outdated = "#CDDC39";
+static constexpr Color color_service_starting_or_stopping = "#FF9800";
+static constexpr Color color_service_pending = "#FFDD00";
+static constexpr Color color_service_stopped = "#9E9E9E";
+static constexpr Color color_importer_satisfied = "#7782AFE0";
+static constexpr Color color_importer_unsatisfied = "#AD758AE0";
+static constexpr Color color_exporter = "#3E9CC1A0";
+static constexpr Color color_interface_visible = "#5A9CA8F0";
+static constexpr Color color_interface_hidden = "#5A9CA850";
+static constexpr Color color_usage = "#69AD9EE0";
+static constexpr Color color_edge_active = "#3F3D3D";
+static constexpr Color color_edge_inactive = "#C63741";
+static constexpr Color color_edge_weak_active = "#878146";
+static constexpr Color color_edge_weak_inactive = "#FF6D46";
+} // namespace colors
+
+static Color service_color(Service const& current) noexcept {
+  if (current.state().isStarting() || current.state().isStopping()) {
+    return colors::color_service_starting_or_stopping;
+  } else if (current.state().isPending()) {
+    return colors::color_service_pending;
+  } else if (current.state().isRunning()) {
+    return colors::color_service_running;
+  } else {
+    // Stopped or other
+    return colors::color_service_stopped;
+  }
+}
+
+static Color importer_color(Import const& current) noexcept {
+  if (current.isSatisfied()) {
+    return colors::color_importer_satisfied;
+  } else {
+    return colors::color_importer_unsatisfied;
+  }
+}
+
+static void print_edge_props(std::ostream& os, EdgeProperties config) {
+  switch (config.relation) {
+    case EdgeRelation::implicit: {
+      os << "arrowhead=onormal style=dashed";
+      break;
+    }
+    case EdgeRelation::parent: {
+      os << "style=dashed";
+      break;
+    }
+    case EdgeRelation::dependency: {
+      os << "arrowhead=vee style=bold";
+      break;
+    }
+    default: {
+      IDLE_DETAIL_UNREACHABLE();
+    }
+  }
+
+  os << " color=\"";
+  if (config.is_weak) {
+    if (config.is_active) {
+      os << colors::color_edge_weak_active;
+    } else {
+      os << colors::color_edge_weak_inactive;
+    }
+  } else {
+    if (config.is_active) {
+      os << colors::color_edge_active;
+    } else {
+      os << colors::color_edge_inactive;
+    }
+  }
+  os << "\"";
+}
+
+template <typename T>
+struct property_writer_trait;
+template <>
+struct property_writer_trait<Node> {
+  static Node to_node(Node const& n) {
+    return n;
+  }
+};
+template <>
+struct property_writer_trait<Service*> {
+  static Node to_node(Service* s) {
+    IDLE_ASSERT(s);
+    return Node(*s);
+  }
+};
+
+template <typename Graph>
+class property_writer {
+  using vertex_descriptor = typename boost::graph_traits<
+      Graph>::vertex_descriptor;
+  using edge_descriptor = typename boost::graph_traits<Graph>::edge_descriptor;
+  using trait = property_writer_trait<vertex_descriptor>;
+
+  static bool needs_cluster(Service& current) noexcept {
+    return !current.imports().empty() || !current.exports().empty();
+  }
+
+public:
+  explicit property_writer(Graph const& graph)
+    : graph_(graph)
+    , edge_property_map_(get(edge_properties_t{}, graph_)) {}
+
+  void operator()(std::ostream& out) const {
+    // General properties
+    print_gv_graph_head(out);
+
+    auto const guid_map = get(boost::vertex_index, graph_);
+
+    auto const nodes = vertices(graph_);
+    std::stack<Service*> frame;
+    std::stack<Service*> cache;
+
+    for (auto itr = nodes.first; itr != nodes.second; ++itr) {
+      Node n = trait::to_node(*itr);
+
+      switch (n.index()) {
+        case Node::index_of<Service>(): {
+          Service& current = n.get<Service>();
+
+          clear_frame(out, frame);
+
+          /// Write the subgraphs in reverse order
+          for (Service& parent : cluster_parent_services(current)) {
+            cache.push(&parent);
+          }
+
+          while (!cache.empty()) {
+            Service& parent = *cache.top();
+            cache.pop();
+
+            if (isa<Export>(parent.parent()) || needs_cluster(parent)) {
+              if (current == parent) {
+                push_frame(out, frame, parent);
+              } else {
+                group_into(out, frame, parent);
+              }
+            }
+          }
+          IDLE_ASSERT(cache.empty());
+
+          Guid const id = get(guid_map, *itr);
+          escape_guid(out, id);
+          break;
+        }
+        case Node::index_of<Import>():
+        case Node::index_of<Export>(): {
+          IDLE_ASSERT(!frame.empty());
+          Guid const id = get(guid_map, *itr);
+          escape_guid(out, id);
+          break;
+        }
+        case Node::index_of<Usage>(): {
+          break;
+        }
+        default: {
+          IDLE_DETAIL_UNREACHABLE();
+        }
+      }
+    }
+
+    clear_frame(out, frame);
+    IDLE_ASSERT(frame.empty());
+  }
+
+  void operator()(std::ostream& out, Service* n) const {
+    IDLE_ASSERT(n);
+    operator()(out, Node(*n));
+  }
+
+  void operator()(std::ostream& out, Node const& n) const {
+    switch (n.index()) {
+      case Node::index_of<Service>(): {
+        Service const& s = n.get<Service>();
+        if (s.isRoot()) {
+          print_node_properties(out, s, colors::color_service_root,
+                                "shape=doubleoctagon");
+        } else {
+          if (isa<Export>(s.parent())) {
+            if (s.state().isManual()) {
+              print_node_properties(out, s, service_color(s),
+                                    "penwidth=3 shape=component");
+            } else {
+              // TODO maybe add a unqiue style for cluster heads
+              print_node_properties(out, s, service_color(s),
+                                    "shape=component");
+            }
+          } else {
+            print_node_properties(out, s, service_color(s), "shape=component");
+          }
+        }
+        break;
+      }
+      case Node::index_of<Import>(): {
+        Import const& current = n.get<Import>();
+        print_node_properties(out, current, importer_color(current),
+                              "shape=tab");
+        break;
+      }
+      case Node::index_of<Export>(): {
+        Export const& current = n.get<Export>();
+        if (isa<Interface>(current)) {
+          Color color;
+          if (current.owner().state().isHidden()) {
+            color = colors::color_interface_hidden;
+          } else {
+            color = colors::color_interface_visible;
+          }
+
+          print_node_properties(out, current, color, "shape=folder");
+
+        } else {
+          print_node_properties(out, current, colors::color_exporter,
+                                "shape=note");
+        }
+        break;
+      }
+      case Node::index_of<Usage>():
+        out << "[label=\"\" height=0.25 width=0.25 shape=diamond "
+               "fillcolor=\""
+            << colors::color_usage << "\"]";
+        break;
+      default: {
+        IDLE_DETAIL_UNREACHABLE();
+      }
+    }
+  }
+
+  void operator()(std::ostream& out, edge_descriptor const& e) const {
+    out << '[';
+    print_edge_props(out, get(edge_property_map_, e));
+    out << ']';
+  }
+
+  Graph const& graph_;
+  typename boost::property_map<Graph, edge_properties_t>::type
+      edge_property_map_;
+};
+
+/*
+static void print_legend(std::ostream& os) {
+  std::size_t count = 0;
+
+  auto print_legend_name = [&](StringView desc) {
+    os << "<tr><td align=\"right\" port=\"i" << count << ">" << desc
+       << "</td></tr>\n";
+    ++count;
+  };
+
+  // https://stackoverflow.com/a/15707752/2303378
+  os << R"(subgraph cluster_legend {
+    node [shape=plaintext style="" fontsize=16]
+    label=<<B>Legend</B>>;
+      key [label=<<table border="0" cellpadding="2" cellspacing="0"
+cellborder="0">)"; print_legend_name("Active Dependency");
+  print_legend_name("Weak Dependency");
+  print_legend_name("Inactive Dependency");
+  os << R"(</table>>]
+    key2 [label=<<table border="0" cellpadding="2" cellspacing="0"
+cellborder="0"> <tr><td port="i1">&nbsp;</td></tr> <tr><td
+port="i2">&nbsp;</td></tr> <tr><td port="i3">&nbsp;</td></tr> <tr><td
+port="i4">&nbsp;</td></tr>
+        </table>>]
+    key:i1:e -> key2:i1:w [style=dashed]
+    key:i2:e -> key2:i2:w [color=gray]
+    key:i3:e -> key2:i3:w [color=peachpuff3]
+    key:i4:e -> key2:i4:w [color=turquoise4, style=dotted]
+  )";
+}*/
+
+struct no_filter {
+  template <typename Node>
+  bool operator()(Node const&) const noexcept {
+    return true;
+  }
+};
+
+struct no_edge_transform {
+  template <typename Edge, typename Graph>
+  auto operator()(Edge const& edge, Graph const& graph) const noexcept {
+    return target(edge, graph);
+  }
+};
+
+/// A custom implementation of boost::write_graphviz making use
+/// of the boost incidence graph concept
+template <typename Graph, typename VertexPropertiesWriter,
+          typename EdgePropertiesWriter, typename GraphPropertiesWriter,
+          typename VertexFilter = no_filter,
+          typename EdgeTargetTransform = no_edge_transform>
+void print_graphviz(std::ostream& out, Graph const& g,
+                    VertexPropertiesWriter vpw, EdgePropertiesWriter epw,
+                    GraphPropertiesWriter gpw,
+                    VertexFilter&& vertex_filter = {},
+                    EdgeTargetTransform&& edge_target = {}) {
+  BOOST_CONCEPT_ASSERT((boost::EdgeListGraphConcept<Graph>));
+  BOOST_CONCEPT_ASSERT((boost::VertexListGraphConcept<Graph>));
+  BOOST_CONCEPT_ASSERT((boost::EdgeListGraphConcept<Graph>));
+  BOOST_CONCEPT_ASSERT((boost::IncidenceGraphConcept<Graph>));
+
+  typedef typename boost::graph_traits<Graph>::directed_category cat_type;
+  typedef boost::graphviz_io_traits<cat_type> Traits;
+
+  auto const guid_map = get(boost::vertex_index, g);
+
+  out << Traits::name() << " "
+      << "G"
+      << " {"
+      << "\n";
+
+  gpw(out); // print graph properties
+
+  typename boost::graph_traits<Graph>::vertex_iterator vertex, end;
+  for (boost::tie(vertex, end) = vertices(g); vertex != end; ++vertex) {
+    if (!(vertex_filter(*vertex))) {
+      continue;
+    }
+
+    Guid const id = get(guid_map, *vertex);
+    escape_guid(out, id);
+
+    out << '\n';
+
+    vpw(out, *vertex); // print vertex attributes
+    out << ";"
+        << "\n";
+
+    typename boost::graph_traits<Graph>::out_edge_iterator edge, edge_end;
+    for (boost::tie(edge, edge_end) = out_edges(*vertex, g); edge != edge_end;
+         ++edge) {
+      escape_guid(out, id);
+      out << "->";
+      Guid const target_guid = get(guid_map, edge_target(*edge, g));
+      escape_guid(out, target_guid);
+      out << ' ';
+      epw(out, *edge); // print edge attributes
+      out << ";\n";
+    }
+  }
+
+  out << "}"
+      << "\n";
+}
+
+struct no_usage_vertex_filter {
+  bool operator()(Node const& n) const noexcept {
+    return !n.is_usage();
+  }
+};
+
+struct bridge_usage_src_transform {
+  template <typename Edge, typename Graph>
+  Node operator()(Edge const& edge, Graph const& graph) const noexcept {
+    Node const n = target(edge, graph);
+    if (n.is_usage()) {
+      Node const src = source(edge, graph);
+
+      Usage& u = n.get<Usage>();
+      Node used(u.used());
+      if (used == src) {
+        return Node(u.user());
+      } else {
+        return used;
+      }
+    } else {
+      return n;
+    }
+  }
+};
+
+void graphviz(std::ostream& os, DependencyGraph const& graph) {
+  BOOST_CONCEPT_ASSERT((boost::VertexListGraphConcept<DependencyGraph>));
+  BOOST_CONCEPT_ASSERT((boost::EdgeListGraphConcept<DependencyGraph>));
+  BOOST_CONCEPT_ASSERT((boost::IncidenceGraphConcept<DependencyGraph>));
+  BOOST_CONCEPT_ASSERT((boost::BidirectionalGraphConcept<DependencyGraph>));
+
+  IDLE_ASSERT(graph.get_context().is_on_event_loop());
+
+  property_writer<DependencyGraph> const writer(graph);
+  print_graphviz(os, graph, writer, writer, writer, no_usage_vertex_filter{},
+                 bridge_usage_src_transform{});
+}
+
+void graphvizReverse(std::ostream& os, DependencyGraph const& graph) {
+  IDLE_ASSERT(graph.get_context().is_on_event_loop());
+
+  auto rev = boost::make_reverse_graph(graph);
+  property_writer<std::decay_t<decltype(rev)>> const writer(rev);
+  print_graphviz(os, rev, writer, writer, writer, no_usage_vertex_filter{},
+                 bridge_usage_src_transform{});
+}
+
+template <typename Graph>
+void print_service_gv_impl(std::ostream& os, Graph const& graph) {
+  using namespace boost;
+  BOOST_CONCEPT_ASSERT((VertexListGraphConcept<Graph>));
+  BOOST_CONCEPT_ASSERT((EdgeListGraphConcept<Graph>));
+  BOOST_CONCEPT_ASSERT((IncidenceGraphConcept<Graph>));
+  BOOST_CONCEPT_ASSERT((BidirectionalGraphConcept<Graph>));
+
+  IDLE_ASSERT(graph.get_context().is_on_event_loop());
+
+  property_writer<Graph> const writer(graph);
+  print_graphviz(os, graph, writer, writer, writer);
+}
+
+template <typename Graph>
+void print_service_gv_rev_impl(std::ostream& os, Graph const& graph) {
+  auto rev = boost::make_reverse_graph(graph);
+
+  IDLE_ASSERT(graph.get_context().is_on_event_loop());
+
+  property_writer<std::decay_t<decltype(rev)>> const writer(rev);
+  print_graphviz(os, rev, writer, writer, writer);
+}
+
+void graphviz(std::ostream& os, ServiceDependencyGraph const& graph) {
+  print_service_gv_impl(os, graph);
+}
+
+void graphvizReverse(std::ostream& os, ServiceDependencyGraph const& graph) {
+  print_service_gv_rev_impl(os, graph);
+}
+
+void graphviz(std::ostream& os, ClusterDependencyGraph const& graph) {
+  print_service_gv_impl(os, graph);
+}
+
+void graphvizReverse(std::ostream& os, ClusterDependencyGraph const& graph) {
+  print_service_gv_rev_impl(os, graph);
+}
+} // namespace idle

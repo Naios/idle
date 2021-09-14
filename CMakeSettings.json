@@ -1,0 +1,22 @@
+﻿{
+  "configurations": [
+    {
+      "name": "x64-Debug",
+      "project": "CMakeLists.txt",
+      "inheritEnvironments": ["msvc_x64_x64"],
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "buildRoot": "${projectDir}/build",
+      "variables": [
+        {
+          "name": "BUILD_SHARED_LIBS",
+          "value": "ON"
+        },
+        {
+          "name": "CMAKE_EXPORT_COMPILE_COMMANDS",
+          "value": "ON"
+        }
+      ]
+    }
+  ]
+}

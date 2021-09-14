@@ -1,0 +1,34 @@
+BasedOnStyle: LLVM
+
+AlignAfterOpenBracket: Align
+AllowAllArgumentsOnNextLine: 'true'
+AllowAllConstructorInitializersOnNextLine: 'true'
+AllowAllParametersOfDeclarationOnNextLine: 'true'
+AllowShortCaseLabelsOnASingleLine: 'false'
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortLambdasOnASingleLine: Empty
+AlwaysBreakTemplateDeclarations: 'Yes'
+BinPackArguments: 'true'
+BinPackParameters: 'true'
+BreakConstructorInitializers: BeforeComma
+BreakConstructorInitializersBeforeComma: 'true'
+ConstructorInitializerIndentWidth: 2
+FixNamespaceComments: 'true'
+IndentCaseLabels: 'true'
+IndentPPDirectives: AfterHash
+PenaltyBreakAssignment: 1000
+PenaltyBreakBeforeFirstCallParameter: 100
+PointerAlignment: Left
+StatementMacros:
+  - 'IDLE_ASSERT'
+  - 'IDLE_CHECK'
+  - 'IDLE_REFLECT'
+IncludeCategories:
+  - Regex:           '^<[a-z_]+>'
+    Priority:        1
+  - Regex:           '^<.*'
+    Priority:        2
+  - Regex:           '^<idle/.*\.hpp>'
+    Priority:        3
+  - Regex:           '.*'
+    Priority:        4
