@@ -177,7 +177,7 @@ Ref<T> allocate(Trait&& trait, Args&&... args) {
   type* cb = raii.release();
   Ref<T> rc(cb->get(), RefCounter(cb, false));
   reference_counted_trait::set(rc.get(), cb);
-  return std::move(rc);
+  return rc;
 }
 
 template <typename T, typename... Args>
