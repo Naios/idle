@@ -47,7 +47,7 @@ constexpr StringView e() noexcept {
   // class idle::StringView __cdecl idle::detail::p<enum idle::myenum,idle::myenum::Two>(void) noexcept
   // class idle::StringView __cdecl idle::detail::p<enum idle::myenum,(enum idle::myenum)0x64>(void) noexcept
   // clang-format on
-  std::size_t const begin = str.find(',', 22) + 1;
+  std::size_t const begin = str.find(',', 47) + 1;
 
   if (str[begin] == '(') {
     return {};
@@ -55,13 +55,27 @@ constexpr StringView e() noexcept {
     return symbol::current_namespace(
         str.substr(begin, str.size() - 16 - begin));
   }
-#else
+#elif defined(IDLE_COMPILER_GCC)
+  // GCC produces something like:
+  // clang-format off
+  // constexpr idle::StringView idle::detail::e() [with T = MyEnum; T Value = MyEnum::A]
+  // constexpr idle::StringView idle::detail::e() [with T = MyEnum; T Value = (MyEnum)6]
+  // clang-format on
+
+  std::size_t const begin = str.find("Value = ", 55) + 8;
+
+  if (str[begin] == '(') {
+    return {};
+  } else {
+    return symbol::current_namespace(str.substr(begin, str.size() - 1 - begin));
+  }
+#else // IDLE_COMPILER_CLANG
   // Clang produces something like:
   // clang-format off
   // idle::StringView idle::detail::e() [T = idle::myenum, Value = idle::myenum::Two]
   // idle::StringView idle::detail::e() [T = idle::myenum, Value = 100]
   // clang-format on
-  std::size_t const begin = str.find("Value = ") + 8;
+  std::size_t const begin = str.find("Value = ", 40) + 8;
 
   if ((str[begin] >= '0') && (str[begin] <= '9')) {
     return {};

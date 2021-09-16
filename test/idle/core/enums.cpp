@@ -32,6 +32,8 @@ using namespace idle;
 
 enum class MyEmptyEnum : unsigned {};
 
+enum class A { B };
+
 namespace testxyz {
 enum class MyDenseEnum : unsigned {
   One,
@@ -78,6 +80,7 @@ struct enum_trait<MyMaskEnum> : enum_mask<MyMaskEnum> {};
 
 TEST_CASE("Have correct size", "[enums]") {
   REQUIRE(enum_size<MyEmptyEnum>() == 0);
+  REQUIRE(enum_size<A>() == 1);
   REQUIRE(enum_size<MyDenseEnum>() == 12);
   REQUIRE(enum_size<MySparseEnum>() == 3);
   REQUIRE(enum_size<MyMaskEnum>() == 8);
@@ -85,11 +88,17 @@ TEST_CASE("Have correct size", "[enums]") {
 
 TEST_CASE("Detects correct density", "[enums]") {
   REQUIRE(is_enum_dense<MyDenseEnum>::value);
+  REQUIRE(is_enum_dense<A>::value);
   REQUIRE(!is_enum_dense<MySparseEnum>::value);
   REQUIRE(is_enum_dense<MyEmptyEnum>::value);
 }
 
 TEST_CASE("Can name the values", "[enums]") {
+  SECTION("small") {
+    static constexpr auto enumeration = enumerate<A>();
+    REQUIRE(enum_name(enumeration, A::B) == "B");
+  }
+
   SECTION("dense") {
     static constexpr auto enumeration = enumerate<MyDenseEnum>();
     REQUIRE(enum_name(enumeration, MyDenseEnum::Three) == "Three");
