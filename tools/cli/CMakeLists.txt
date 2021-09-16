@@ -90,7 +90,6 @@ idle_group_sources(${CMAKE_CURRENT_LIST_DIR})
 
 install(
   DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/install/etc"
-            "${CMAKE_CURRENT_LIST_DIR}/install/share"
             "${CMAKE_CURRENT_LIST_DIR}/install/project"
   DESTINATION "${CMAKE_INSTALL_PREFIX}")
 
