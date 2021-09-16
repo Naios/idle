@@ -25,12 +25,14 @@ RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - \
  && apt-get update \
  && DEBIAN_FRONTEND="noninteractive" apt-get install -y \
     clang-12 \
+    g++-9 \
     fish \
     git \
     libssl-dev \
     ninja-build \
     graphviz \
     gdb \
+    valgrind \
  && apt-get clean \
  && update-alternatives --install /usr/bin/cc cc $(which clang-12) 100 \
  && update-alternatives --install /usr/bin/c++ c++ $(which clang++-12) 100
