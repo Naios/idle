@@ -8,7 +8,7 @@ CC=clang-12
 CXX=clang++-12
 
 SRC_DIR=$(pwd -P)
-BUILD_DIR=$SRC_DIR/build/docker/cc-$3-cxx-$4
+BUILD_DIR=$SRC_DIR/build/docker/cc-$CC-cxx-$CXX
 
 mkdir -p $BUILD_DIR
 cd $BUILD_DIR
@@ -16,8 +16,8 @@ cd $BUILD_DIR
 echo "- Mounting Source: '$SRC_DIR'"
 echo "- Mounting Build: '$BUILD_DIR'"
 echo "- Mounting Cache: '$IDLE_PACKAGE_CACHE'"
-echo "- CC: $CC"
-echo "- CXX: $CXX"
+echo "- CC: '$CC'"
+echo "- CXX: '$CXX'"
 
 if [ "$#" -gt 0 ]
   then

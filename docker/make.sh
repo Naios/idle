@@ -4,13 +4,13 @@ cd $(dirname "$0")/..
 IDLE_PACKAGE_CACHE=${IDLE_PACKAGE_CACHE}
 IDLE_PACKAGE_CACHE_MOUNT=/home/cache
 
-BUILD_TARGET=${1:-cli}
+BUILD_TARGET=$1
 BUILD_TYPE=${2:-Release}
 CC=${3:-clang-12}
 CXX=${4:-clang++-12}
 
 SRC_DIR=$(pwd -P)
-BUILD_DIR=$SRC_DIR/build/docker/cc-$3-cxx-$4
+BUILD_DIR=$SRC_DIR/build/docker/cc-$CC-cxx-$CXX
 
 mkdir -p $BUILD_DIR
 cd $BUILD_DIR
