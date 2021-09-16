@@ -1,0 +1,44 @@
+name: Build and Install
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+env:
+  BUILD_TYPE: Release
+  IDLE_PACKAGE_CACHE: ${{github.workspace}}/cache
+  CC: ${{ matrix.config.compiler }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        config:
+          - { compiler: clang-12, generator: Unix Makefiles, install: install }
+          - { compiler: gcc-9, generator: Unix Makefiles, install: install }
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Cache
+        uses: actions/cache@v2.1.6
+        if: ${{ !env.ACT }}
+        with:
+          path: ${{env.IDLE_PACKAGE_CACHE}}
+          key: ${{ runner.os }}-dependencies
+
+      - name: Configure CMake
+        run: /opt/cmake/bin/cmake -G "${{ matrix.config.generator }}" -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install
+
+      - name: Build
+        run: /opt/cmake/bin/cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+
+      - name: Install
+        run: /opt/cmake/bin/cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target ${{ matrix.config.install }}
+
+      - name: Test
+        working-directory: ${{github.workspace}}/build
+        run: /opt/cmake/bin/ctest -C ${{env.BUILD_TYPE}}
