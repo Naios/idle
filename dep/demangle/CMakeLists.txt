@@ -65,7 +65,7 @@ endif()
 idle_license_install_dir(IDLE_LICENSE_INSTALL_DIR)
 
 install(
-  FILES "${CMAKE_CURRENT_LIST_DIR}/demangle/LICENSE.txt"
+  FILES "${CMAKE_CURRENT_LIST_DIR}/demangle/LICENSE.TXT"
   DESTINATION "${IDLE_LICENSE_INSTALL_DIR}"
   RENAME "license-llvm.txt")
 
