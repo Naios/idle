@@ -267,7 +267,7 @@ bool Edge::isWeak() const noexcept {
 }
 
 EdgeProperties Edge::properties() const noexcept {
-  return {relation(), is_active(), isWeak()};
+  return EdgeProperties{relation(), is_active(), isWeak()};
 }
 
 std::ostream& operator<<(std::ostream& os, Edge const& current) {

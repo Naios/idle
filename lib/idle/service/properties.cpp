@@ -108,7 +108,7 @@ private:
 
   Component<Timer> timer_{*this};
   Duration debounce_duration_{std::chrono::milliseconds(50)};
-  std::atomic<TimePoint> next_;
+  std::atomic<TimePoint> next_{{}};
 };
 
 static void consume_shebang(std::istream& is) {
