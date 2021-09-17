@@ -360,6 +360,6 @@ If you are running into issues with rebuilds, try to delete the build directory 
 - Is it possible to disable RTTI?
   - *Idle* uses RTTI for improved naming of your services only, if available, and can be used without RTTI. Naming support through the `IDLE_SERVICE`, `IDLE_INTERFACE`, and `IDLE_PART` macros are implemented without RTTI through constexpr type reflection (`__PRETTY_FUNCTION__` parsing).
 - Why is this software licensed under AGPL v3? Is it planned to relicense it?
-  - *Idle* is licensed under the AGPL until the project has grown in maturity and we can narrow the project's direction. Different parts of the project will eventually be relicensed/sublicensed to a more permissive license to make it available to a broader audience.
+  - *Idle* is licensed under the AGPL until the project has grown in maturity and we can narrow the project's direction. Different parts of the project might be relicensed/sublicensed to a more permissive license to make it available to a broader audience.
     I'm currently looking into possibilities to fund this project properly, and therefore licensing it now for open commercial use, would limit my options.
 

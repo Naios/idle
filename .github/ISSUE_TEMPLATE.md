@@ -1,7 +1,5 @@
 @Naios <!-- This is required so I get notified properly -->
 
-<!-- Please replace {Please write here} with your description -->
-
 <!-- Questions are highly welcomed! For those you may delete the template below. -->
 
 -----
@@ -25,6 +23,19 @@
 ### Your Environment
 
 - OS: {Please write here - Windows/Linux dist/OSX}
-- Compiler and version: {Please write here - MSVC/Clang/GCC/Other}
+- Compiler and version: {Please write here - MSVC/Clang/GCC}
 - Standard library (if non default): {Please write here}
 
+### Available Stack traces
+
+<!-- Please provide any available stack traces -->
+
+### Idle Graph as PDF
+
+<!-- Please provide a graph of of your current system as PDF -->
+<!-- Use "idle graph show" from the CLI to create one -->
+
+### Idle detailed internal trace logs
+
+<!-- Enable internal trace logs through setting the IDLE_INTERNAL_LOGLEVEL environment variable -->
+<!-- Use `IDLE_INTERNAL_LOGLEVEL=0 ./idle` to start the *Idle* CLI -->
