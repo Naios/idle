@@ -32,14 +32,14 @@ file(GLOB_RECURSE FILESYSTEM_SRC "${Boost_DIR}/libs/filesystem/src/*.cpp")
 
 add_library(Boost::headers INTERFACE IMPORTED GLOBAL)
 
-add_library(boost STATIC ${CMAKE_CURRENT_LIST_DIR}/error_code.cpp
+add_library(boost STATIC "${CMAKE_CURRENT_LIST_DIR}/error_code.cpp"
                          ${FILESYSTEM_SRC})
 
 target_link_libraries(boost PUBLIC Boost::headers)
 
 target_include_directories(
   boost
-  PUBLIC ${Boost_DIR}/include
+  PUBLIC "${Boost_DIR}/include"
   PRIVATE ${Backtrace_INCLUDE_DIRS})
 
 #[[

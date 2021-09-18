@@ -31,8 +31,10 @@ function(idle_package_cache_dir OUT_CACHE_DIR)
         "${IDLE_PACKAGE_CACHE}"
         PARENT_SCOPE)
   elseif(NOT "$ENV{IDLE_PACKAGE_CACHE}" STREQUAL "")
+    file(TO_CMAKE_PATH "$ENV{IDLE_PACKAGE_CACHE}" IDLE_PACKAGE_CACHE_NORMALIZED)
+
     set(${OUT_CACHE_DIR}
-        "$ENV{IDLE_PACKAGE_CACHE}"
+        "${IDLE_PACKAGE_CACHE_NORMALIZED}"
         PARENT_SCOPE)
   else()
     set(${OUT_CACHE_DIR}

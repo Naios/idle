@@ -8,50 +8,69 @@ on:
 
 env:
   BUILD_TYPE: Release
-  IDLE_PACKAGE_CACHE: ${{github.workspace}}/cache
+  IDLE_PACKAGE_CACHE: ${{ github.workspace }}/cache
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        config:
+        include:
           - {
+              os: ubuntu-20.04,
               cc: clang-12,
               cxx: clang++-12,
               generator: Ninja,
               install: install,
             }
           - {
+              os: ubuntu-20.04,
               cc: gcc-9,
               cxx: g++-9,
               generator: Ninja,
               install: install,
             }
+          - { os: macos-10.15, generator: Ninja, install: install }
+          - {
+              os: windows-2019,
+              generator: Visual Studio 16 2019,
+              winsdk: 19041,
+              system_version: 10.0.19041.0,
+              install: INSTALL,
+            }
     env:
-      CC: ${{ matrix.config.cc }}
-      CXX: ${{ matrix.config.cxx }}
+      CC: ${{ matrix.cc }}
+      CXX: ${{ matrix.cxx }}
 
     steps:
       - uses: actions/checkout@v2
       - uses: seanmiddleditch/gha-setup-ninja@v3
 
+      - uses: fbactions/setup-winsdk@v1
+        if: ${{ matrix.winsdk }}
+        with:
+          winsdk-build-version: ${{ matrix.winsdk }}
+
       - name: Cache
         uses: actions/cache@v2.1.6
         if: ${{ !env.ACT }}
         with:
-          path: ${{env.IDLE_PACKAGE_CACHE}}
+          path: ${{ env.IDLE_PACKAGE_CACHE }}
           key: ${{ runner.os }}-dependencies
 
       - name: Configure CMake
-        run: cmake -G "${{ matrix.config.generator }}" -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install
+        run: cmake -G "${{ matrix.generator }}"
+          -B "${{ github.workspace }}/build"
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+          -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install"
+          -DCMAKE_SYSTEM_VERSION="${{ matrix.system_version }}"
 
       - name: Build
-        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+        run: cmake --build "${{ github.workspace }}/build" --config ${{ env.BUILD_TYPE }}
 
       - name: Install
-        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target ${{ matrix.config.install }}
+        run: cmake --build "${{ github.workspace }}/build" --config ${{ env.BUILD_TYPE }} --target ${{ matrix.install }}
 
       - name: Test
         working-directory: ${{github.workspace}}/build
