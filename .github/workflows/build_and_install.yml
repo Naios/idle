@@ -89,7 +89,7 @@ jobs:
         uses: actions/cache@v2.1.6
         if: ${{ !env.ACT }}
         with:
-          path: ${{ env.IDLE_PACKAGE_CACHE }}
+          path: ${{ env.IDLE_PACKAGE_CACHE }}/packages
           key: ${{ runner.os }}-dependencies
 
       - name: Configure CMake
