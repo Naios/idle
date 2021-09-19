@@ -26,6 +26,7 @@
 #ifndef IDLE_CORE_DETAIL_EXCEPTION_BASE_HPP_INCLUDED
 #define IDLE_CORE_DETAIL_EXCEPTION_BASE_HPP_INCLUDED
 
+#include <string>
 #include <system_error>
 #include <boost/exception/exception.hpp>
 // #include <idle/core/exception.hpp>
@@ -64,13 +65,15 @@ public:
 template <typename Base>
 class error_code_wrapper : public Base {
   std::error_code code_;
+  std::string message_;
 
 public:
   explicit error_code_wrapper(std::error_code code)
-    : code_(std::move(code)) {}
+    : code_(std::move(code))
+    , message_(code_.message()) {}
 
   char const* what() const noexcept override {
-    return code_.message().c_str();
+    return message_.c_str();
   }
 
   std::error_code const& error_code() const override {
