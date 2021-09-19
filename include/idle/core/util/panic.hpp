@@ -32,7 +32,7 @@
 
 namespace idle {
 namespace detail {
-[[noreturn]] IDLE_API(idle) void panic(StringView msg) noexcept;
+[[noreturn]] IDLE_API(idle) void panic(StringView message) noexcept;
 }
 } // namespace idle
 

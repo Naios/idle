@@ -148,7 +148,9 @@ target_compile_definitions(
          # BOOST_ASIO_NO_DEPRECATED
          # $<$<PLATFORM_ID:Windows>:BOOST_STACKTRACE_USE_WINDBG>
          # $<$<PLATFORM_ID:Linux>:BOOST_STACKTRACE_USE_BACKTRACE>
-)
+         $<$<PLATFORM_ID:Darwin>:
+         BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
+         >)
 
 if(BUILD_SHARED_LIBS)
   set_property(TARGET boost PROPERTY POSITION_INDEPENDENT_CODE ON)

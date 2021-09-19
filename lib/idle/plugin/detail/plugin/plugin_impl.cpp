@@ -48,7 +48,7 @@ static optional<char const*> platform_debug_symbol_db_extension() {
 }
 
 continuable<> PluginSourceImpl::onStart() {
-  return async([=] {
+  return async([this] {
     IDLE_ASSERT(loaded_modules_.empty());
     IDLE_ASSERT(sideload_ban_.empty());
     IDLE_ASSERT(sideloaded_modules_.empty());

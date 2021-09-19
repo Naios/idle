@@ -35,13 +35,13 @@ namespace detail {
 /// An unordered map with no enforced pointer stability
 template <typename Key, typename Value, typename Hash = std::hash<Key>,
           typename KeyEqual = std::equal_to<Key>,
-          typename Allocator = std::allocator<Key>>
+          typename Allocator = std::allocator<std::pair<Key const, Value>>>
 using unordered_map = std::unordered_map<Key, Value, Hash, KeyEqual, Allocator>;
 
 /// An unordered map with guaranteed pointer stability
 template <typename Key, typename Value, typename Hash = std::hash<Key>,
           typename KeyEqual = std::equal_to<Key>,
-          typename Allocator = std::allocator<Key>>
+          typename Allocator = std::allocator<std::pair<Key const, Value>>>
 using unordered_node_map = std::unordered_map<Key, Value, Hash, KeyEqual,
                                               Allocator>;
 } // namespace detail

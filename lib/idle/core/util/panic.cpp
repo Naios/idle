@@ -32,22 +32,31 @@
 #include <fmt/color.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
+#include <idle/core/platform.hpp>
 #include <idle/core/util/panic.hpp>
 #include <idle/core/util/thread_name.hpp>
 
 namespace idle {
 namespace detail {
-[[noreturn]] void panic(StringView msg) noexcept {
+[[noreturn]] void panic(StringView message) noexcept {
   StringView const thread_name = this_thread_name();
   auto const name = boost::dll::program_location().filename().generic_string();
 
   fmt::print(stderr,
              fmt::emphasis::bold | fmt::fg(fmt::terminal_color::bright_magenta),
              FMT_STRING("{} paniced in thread {} ('{}'): {}"), name,
-             std::this_thread::get_id(), thread_name ? thread_name : "?", msg);
+             std::this_thread::get_id(), thread_name ? thread_name : "?",
+             message);
 
   std::fflush(stderr);
+
+#ifdef IDLE_PLATFORM_MACOS
+  // It seems like std::quick_exit is not implemented on macOS's libc:
+  // https://stackoverflow.com/questions/11681403/state-of-c11-standard-support-in-libc/60496235#60496235
+  std::abort();
+#else
   std::quick_exit(EXIT_FAILURE);
+#endif
 }
 } // namespace detail
 } // namespace idle

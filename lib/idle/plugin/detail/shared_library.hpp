@@ -50,9 +50,9 @@ bool unload(handle_t handle);
 unordered_set<std::string> currently_loaded();
 
 /// Converts the given plugin name to lowercase in case the filesystem is
-/// case insensitive like on windows.
+/// case insensitive like on Windows.
 ///
-/// MSVC really likes to mix the cases for the same DLL such
+/// Windows/MSVC really likes to mix the cases for the same DLL such
 /// as KERNEL32.DLL, KERNEL32.dll and kernel32.dll.
 void normalize_name(std::string& path);
 } // namespace shared_library

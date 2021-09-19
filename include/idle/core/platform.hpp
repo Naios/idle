@@ -44,6 +44,8 @@
 #  define IDLE_COMPILER_CLANG
 #elif defined(__GNUC__)
 #  define IDLE_COMPILER_GCC
+#elif !defined(IDLE_HAS_SUPPRESSED_UNKNOWN_COMPILER)
+#  error Unknown compiler!
 #endif
 
 #endif // IDLE_CORE_PLATFORM_HPP_INCLUDED

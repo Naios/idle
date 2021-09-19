@@ -30,11 +30,13 @@
 #include <idle/core/platform.hpp>
 #include <idle/plugin/detail/shared_library.hpp>
 
-#ifdef _WIN32
+#ifdef IDLE_PLATFORM_WINDOWS
+#  include <Psapi.h>
 #  include <Windows.h>
-#  include <psapi.h>
+#elif defined(IDLE_PLATFORM_MACOS)
+#  include <dlfcn.h>
+#  include <mach-o/dyld.h>
 #else
-// #  define _GNU_SOURCE
 #  include <dlfcn.h>
 #  include <link.h>
 #endif
@@ -43,7 +45,7 @@ namespace idle {
 namespace detail {
 namespace shared_library {
 optional<handle_t> load(char const* path, boost::dll::fs::error_code& ec) {
-#ifdef _WIN32
+#ifdef IDLE_PLATFORM_WINDOWS
   auto handle = LoadLibraryA(path);
   if (!handle) {
     boost::winapi::DWORD_ const errc = boost::winapi::GetLastError();
@@ -63,7 +65,7 @@ optional<handle_t> load(char const* path, boost::dll::fs::error_code& ec) {
 }
 
 void* lookup(handle_t handle, char const* name) {
-#ifdef _WIN32
+#ifdef IDLE_PLATFORM_WINDOWS
   return reinterpret_cast<void*>(GetProcAddress(handle, name));
 #else
   return dlsym(handle, name);
@@ -76,6 +78,14 @@ bool unload(handle_t handle) {
 #else
   return dlclose(handle) == 0;
 #endif
+}
+
+// Return the name without its location
+static std::string get_module_base_name(char const* module_path) {
+  boost::filesystem::path const p(module_path);
+  std::string name = p.filename().generic_string();
+  normalize_name(name);
+  return name;
 }
 
 unordered_set<std::string> currently_loaded() {
@@ -94,13 +104,16 @@ unordered_set<std::string> currently_loaded() {
       if (GetModuleFileNameEx(process, modules[i], module_path,
                               sizeof(module_path) / sizeof(TCHAR))) {
 
-        // Return the name without its location
-        boost::filesystem::path const p(module_path);
-        std::string name = p.filename().generic_string();
-        normalize_name(name);
-        loaded.insert(std::move(name));
+        loaded.insert(get_module_base_name(module_path));
       }
     }
+  }
+#elif defined(IDLE_PLATFORM_MACOS)
+  std::uint32_t const count = _dyld_image_count();
+  for (std::uint32_t i = 0; i < count; ++i) {
+    char const* const module_path = _dyld_get_image_name(i);
+
+    loaded.insert(get_module_base_name(module_path));
   }
 #else
   using callback_t = int (*)(struct dl_phdr_info * info, size_t size,
@@ -123,9 +136,6 @@ void normalize_name(std::string& path) {
   boost::algorithm::to_lower(path);
 #endif
 }
-
-// GetModuleHandle
-// /FIXED /DYNAMICBASE
 } // namespace shared_library
 } // namespace detail
 } // namespace idle
