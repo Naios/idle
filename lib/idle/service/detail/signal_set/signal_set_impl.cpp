@@ -25,23 +25,16 @@
 
 #include <csignal>
 #include <boost/asio/signal_set.hpp>
+#include <continuable/external/asio.hpp>
 #include <idle/core/ref.hpp>
 #include <idle/core/util/assert.hpp>
 #include <idle/core/util/upcastable.hpp>
-#include <idle/service/detail/promises_mapping.hpp>
 #include <idle/service/detail/signal_set/signal_set_impl.hpp>
 #include <idle/service/signal_set.hpp>
 
 namespace idle {
 continuable<SignalSet::signal_t> signal_set_impl::wait_impl() {
-  return promisify<signal_t>::with(
-      default_boost_asio_resolver(),
-      [weak = weakOf(this)](auto&&... args) mutable {
-        if (auto me = weak.lock()) {
-          IDLE_ASSERT(me->state().isRunning());
-          me->signal_set_->async_wait(std::forward<decltype(args)>(args)...);
-        }
-      });
+  return signal_set_->async_wait(cti::use_continuable);
 }
 
 void signal_set_impl::setup_impl(Config config) {

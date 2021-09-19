@@ -28,7 +28,7 @@
 
 namespace idle {
 namespace detail {
-class process_bad_exit_code_exception_impl
+class process_bad_exit_code_exception_impl final
   : public process_bad_exit_code_exception {
 
   int exit_code_;
@@ -51,10 +51,31 @@ public:
   }
 };
 
+class process_error_code_exception_impl final
+  : public process_execution_exception {
+
+  std::error_code error_code_;
+  std::string message_;
+
+public:
+  explicit process_error_code_exception_impl(std::error_code error_code)
+    : error_code_(std::move(error_code))
+    , message_(error_code_.message()) {}
+
+  char const* what() const noexcept override {
+    return message_.c_str();
+  }
+};
+
 std::exception_ptr make_bad_exit_code_exception_ptr(std::error_code ec,
                                                     int exit_code) {
   return std::make_exception_ptr(
       process_bad_exit_code_exception_impl{exit_code, std::move(ec)});
+}
+
+std::exception_ptr make_error_code_exception(std::error_code ec) {
+  return std::make_exception_ptr(
+      process_error_code_exception_impl{std::move(ec)});
 }
 } // namespace detail
 } // namespace idle

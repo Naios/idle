@@ -38,7 +38,6 @@
 #include <idle/core/ref.hpp>
 #include <idle/core/util/assert.hpp>
 #include <idle/core/util/upcastable.hpp>
-#include <idle/service/detail/promises_mapping.hpp>
 #include <idle/service/process_group.hpp>
 
 namespace boost {
@@ -51,6 +50,8 @@ namespace idle {
 namespace detail {
 std::exception_ptr make_bad_exit_code_exception_ptr(std::error_code ec,
                                                     int exit_code);
+
+std::exception_ptr make_error_code_exception(std::error_code ec);
 
 template <typename Parent, typename Child>
 class ProcessFrame : public Child, public Upcastable<Parent> {
@@ -139,10 +140,14 @@ private:
       // Throw an exception on bad exit codes
       promise_->set_exception(make_bad_exit_code_exception_ptr(ec, exit_code));
     } else {
-      if (!ec) {
+      if (ec) {
+        std::move(*promise_).set_exception(
+            make_error_code_exception(std::move(ec)));
+      } else {
         static_cast<Parent*>(this)->onFinished(exit_code);
+
+        std::move(*promise_).set_value(refOf(this));
       }
-      direct_resolve_from_boost(std::move(*promise_), ec, refOf(this));
     }
 
     static_cast<Parent*>(this)->onCleanup();
