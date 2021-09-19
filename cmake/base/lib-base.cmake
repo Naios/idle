@@ -40,4 +40,6 @@ target_compile_options(
             $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:
             -Wall
             -pedantic
-            -Wextra>)
+            -Wextra
+            -Wno-unused-parameter
+            -Wno-unused-lambda-capture>)

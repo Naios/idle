@@ -367,9 +367,10 @@ void Scheduler::on_service_stoppable(Service& current) {
 
 static bool is_unhealthy(Service& head) {
   IDLE_ASSERT(is_cluster_head(head));
+
   return ServiceImpl::is_cluster_pushed(head) &&
-             !ServiceImpl::is_cluster_running(head) ||
-         ServiceImpl::is_cluster_marked_for_stop(head);
+         (!ServiceImpl::is_cluster_running(head) ||
+          ServiceImpl::is_cluster_marked_for_stop(head));
 }
 
 continuable<> Scheduler::do_update_system() {
