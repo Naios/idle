@@ -7,7 +7,6 @@ on:
     branches: [master]
 
 env:
-  BUILD_TYPE: Release
   IDLE_PACKAGE_CACHE: ${{ github.workspace }}/cache
 
 jobs:
@@ -21,6 +20,15 @@ jobs:
               os: ubuntu-20.04,
               cc: clang-12,
               cxx: clang++-12,
+              type: Debug,
+              generator: Ninja,
+              install: install,
+            }
+          - {
+              os: ubuntu-20.04,
+              cc: clang-12,
+              cxx: clang++-12,
+              type: Release,
               generator: Ninja,
               install: install,
             }
@@ -28,13 +36,37 @@ jobs:
               os: ubuntu-20.04,
               cc: gcc-9,
               cxx: g++-9,
+              type: Debug,
               generator: Ninja,
               install: install,
             }
-          - { os: macos-10.15, generator: Ninja, install: install }
+          - {
+              os: ubuntu-20.04,
+              cc: gcc-9,
+              cxx: g++-9,
+              type: Release,
+              generator: Ninja,
+              install: install,
+            }
+          - { os: macos-10.15, type: Debug, generator: Ninja, install: install }
+          - {
+              os: macos-10.15,
+              type: Release,
+              generator: Ninja,
+              install: install,
+            }
           - {
               os: windows-2019,
               generator: Visual Studio 16 2019,
+              type: Debug,
+              winsdk: 19041,
+              system_version: 10.0.19041.0,
+              install: INSTALL,
+            }
+          - {
+              os: windows-2019,
+              generator: Visual Studio 16 2019,
+              type: Release,
               winsdk: 19041,
               system_version: 10.0.19041.0,
               install: INSTALL,
@@ -42,6 +74,7 @@ jobs:
     env:
       CC: ${{ matrix.cc }}
       CXX: ${{ matrix.cxx }}
+      BUILD_TYPE: ${{ matrix.type }}
 
     steps:
       - uses: actions/checkout@v2
@@ -73,5 +106,5 @@ jobs:
         run: cmake --build "${{ github.workspace }}/build" --config ${{ env.BUILD_TYPE }} --target ${{ matrix.install }}
 
       - name: Test
-        working-directory: ${{github.workspace}}/build
-        run: ctest -C ${{env.BUILD_TYPE}} --verbose
+        working-directory: ${{ github.workspace }}/build
+        run: ctest -C ${{ env.BUILD_TYPE }} --verbose
