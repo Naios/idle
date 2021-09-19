@@ -25,6 +25,7 @@
 
 #include <algorithm>
 #include <array>
+#include <idle/core/util/meta.hpp>
 #include <idle/core/util/string_view.hpp>
 #include <idle/core/util/thread_name.hpp>
 
@@ -50,6 +51,26 @@ namespace idle {
 static thread_local std::array<char, 65> this_thread_name_{{}};
 static thread_local std::size_t this_thread_name_length_{};
 
+#ifndef IDLE_PLATFORM_WINDOWS
+// The API of pthread_setname_np can differ across platforms that
+// support pthread as described in:
+// https://stackoverflow.com/questions/2369738/how-to-set-the-name-of-a-thread-in-linux-pthreads/7989973#7989973
+// We fix this through using SFINAE against pthread_setname_np.
+namespace detail {
+template <typename Str,
+          void_t<decltype(::pthread_setname_np(
+              ::pthread_self(), std::declval<Str const&>().data()))>* = nullptr>
+void set_current_thread_name(Str const& str) noexcept {
+  ::pthread_setname_np(pthread_self(), str.data());
+}
+template <typename Str, void_t<decltype(::pthread_setname_np(
+                            std::declval<Str const&>().data()))>* = nullptr>
+void set_current_thread_name(Str const& str) noexcept {
+  ::pthread_setname_np(str.data());
+}
+} // namespace detail
+#endif
+
 void set_this_thread_name(StringView name) noexcept {
   std::size_t const size = std::min(this_thread_name_.size() - 1, name.size());
   std::memcpy(this_thread_name_.data(), name.data(), size);
@@ -73,19 +94,19 @@ void set_this_thread_name(StringView name) noexcept {
   THREADNAME_INFO info;
   info.dwType = 0x1000;
   info.szName = this_thread_name_.data();
-  info.dwThreadID = GetThreadId(this_thread_handle());
+  info.dwThreadID = GetThreadId(this_thread);
   info.dwFlags = 0;
 
   constexpr DWORD MS_VC_EXCEPTION = 0x406D1388;
 
   __try {
-
     RaiseException(MS_VC_EXCEPTION, 0, sizeof(info) / sizeof(ULONG_PTR),
                    reinterpret_cast<ULONG_PTR*>(&info));
   } __except (EXCEPTION_EXECUTE_HANDLER) {
   }
 #  else
-  pthread_setname_np(this_thread_handle(), this_thread_name_.data());
+  detail::set_current_thread_name(StringView(this_thread_name_.data(), //
+                                             this_thread_name_length_));
 #  endif
 #endif
 }
