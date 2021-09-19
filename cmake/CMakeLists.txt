@@ -23,5 +23,4 @@
 #]]
 
 include(cmake/configure_compiler.cmake)
-include(cmake/configure_macros.cmake)
 include(cmake/configure_bases.cmake)

@@ -226,7 +226,8 @@ endif()
 
 option(IDLE_WITH_PCH "Enable the precompiled header compilation" ON)
 if(IDLE_WITH_PCH)
-  configure_pch(idle ${CMAKE_CURRENT_LIST_DIR}/pch.hpp)
+  message(STATUS "Enabling CMake PCH")
+  target_precompile_headers(idle PRIVATE ${CMAKE_CURRENT_LIST_DIR}/pch.hpp)
 endif()
 
 idle_group_sources(${CMAKE_CURRENT_LIST_DIR} ${CMAKE_SOURCE_DIR}/include/idle)
