@@ -175,6 +175,22 @@ target_compile_options(
     $<$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,19.26>:/Zc:preprocessor>
     >)
 
+target_compile_features(
+  idle
+  PUBLIC cxx_alias_templates
+         cxx_auto_type
+         cxx_constexpr
+         cxx_decltype
+         cxx_decltype_auto
+         cxx_final
+         cxx_lambdas
+         cxx_generic_lambdas
+         cxx_variadic_templates
+         cxx_defaulted_functions
+         cxx_nullptr
+         cxx_trailing_return_types
+         cxx_return_type_deduction)
+
 target_link_options(
   idle PRIVATE $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Debug>>:
   /PDBALTPATH:$<TARGET_PDB_FILE_NAME:idle> >)

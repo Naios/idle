@@ -25,7 +25,7 @@
 include(IdleDependency)
 
 idle_dependency(
-  "catchorg/Catch2@7727c15290ce2d289c1809d0eab3cceb88384ad6" #
+  "catchorg/Catch2@c4e3767e265808590986d5db6ca1b5532a7f3d13" #
   FILTER
   "single_include"
   SUBDIRECTORY

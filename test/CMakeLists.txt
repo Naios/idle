@@ -30,7 +30,8 @@ file(
   "${CMAKE_CURRENT_SOURCE_DIR}/testing/*.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/testing/*.hpp")
 add_library(testing STATIC "${SOURCES}")
-target_link_libraries(testing PUBLIC idle::idle Catch2::Catch2)
+target_link_libraries(testing PUBLIC idle-project-base idle::idle
+                                     Catch2::Catch2)
 target_include_directories(testing
                            PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/testing/include")
 set_target_properties(testing PROPERTIES FOLDER "test")
