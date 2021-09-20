@@ -187,7 +187,6 @@ class DefaultStoreImpl final : public Extends<DefaultStore>,
   using KeyID = std::uint64_t;
 
   struct Env {
-    SQLite3DB db{nullptr, nullptr};
     SQLite3Statement create_key_with_name{nullptr, nullptr};
     SQLite3Statement select_key_with_name{nullptr, nullptr};
     SQLite3Statement lock_id{nullptr, nullptr};
@@ -203,7 +202,8 @@ public:
 
   continuable<> onStart() override {
     return async([this] {
-      IDLE_ASSERT(!env_.db);
+      IDLE_ASSERT(!db_);
+      IDLE_ASSERT(!env_.create_key_with_name);
 
       IDLE_DETAIL_LOG_DEBUG("Opening an SQLite3 storage at '{}'",
                             config_.path.empty() ? "<memory>"
@@ -215,7 +215,7 @@ public:
 
       Env env;
 
-      env.db = [&] {
+      SQLite3DB db = [&] {
         sqlite3* init;
 
         if (sqlite3_open(str_or_null(config_.path), &init) != SQLITE_OK) {
@@ -231,20 +231,20 @@ public:
         return SQLite3DB(init, &sqlite3_close);
       }();
 
-      sqlite_batch_execute(*env.db, query::create);
-      env.create_key_with_name = sqlite_prepare(*env.db,
+      sqlite_batch_execute(*db, query::create);
+      env.create_key_with_name = sqlite_prepare(*db,
                                                 query::create_key_with_name);
-      env.select_key_with_name = sqlite_prepare(*env.db,
+      env.select_key_with_name = sqlite_prepare(*db,
                                                 query::select_key_with_name);
-      env.lock_id = sqlite_prepare(*env.db, query::lock_id);
-      env.unlock_id = sqlite_prepare(*env.db, query::unlock_id);
-      env.select_data_by_id = sqlite_prepare(*env.db, query::select_data_by_id);
-      env.insert_store_by_key = sqlite_prepare(*env.db,
-                                               query::insert_store_by_key);
-      env.update_store_by_id = sqlite_prepare(*env.db,
-                                              query::update_store_by_id);
-      env.finalize_store_by_id = sqlite_prepare(*env.db,
+      env.lock_id = sqlite_prepare(*db, query::lock_id);
+      env.unlock_id = sqlite_prepare(*db, query::unlock_id);
+      env.select_data_by_id = sqlite_prepare(*db, query::select_data_by_id);
+      env.insert_store_by_key = sqlite_prepare(*db, query::insert_store_by_key);
+      env.update_store_by_id = sqlite_prepare(*db, query::update_store_by_id);
+      env.finalize_store_by_id = sqlite_prepare(*db,
                                                 query::finalize_store_by_id);
+
+      db_ = std::move(db);
       env_ = std::move(env);
     });
   }
@@ -252,6 +252,10 @@ public:
   continuable<> onStop() override {
     return async([this] {
       env_ = {};
+      db_ = {};
+
+      IDLE_ASSERT(!db_);
+      IDLE_ASSERT(!env_.create_key_with_name);
     });
   }
 
@@ -265,9 +269,9 @@ public:
       sqlite3_bind_text(stmt, 1, key.data(), key.size(), nullptr);
 
       IDLE_DETAIL_LOG_TRACE("Create name query: '{}'", sqlite3_sql(stmt));
-      IDLE_CHECK(sqlite_try(*env_.db, sqlite3_step(stmt)) == SQLITE_DONE);
+      IDLE_CHECK(sqlite_try(*db_, sqlite3_step(stmt)) == SQLITE_DONE);
 
-      IDLE_ASSERT(sqlite3_changes(env_.db.get()) == 1);
+      IDLE_ASSERT(sqlite3_changes(db_.get()) == 1);
     }
 
     // sqlite3_last_insert_rowid does not represent the inserted row
@@ -276,7 +280,7 @@ public:
     sqlite3_bind_text(stmt, 1, key.data(), key.size(), nullptr);
 
     IDLE_DETAIL_LOG_TRACE("Select name query: '{}'", sqlite3_sql(stmt));
-    IDLE_CHECK(sqlite_try(*env_.db, sqlite3_step(stmt)) == SQLITE_ROW);
+    IDLE_CHECK(sqlite_try(*db_, sqlite3_step(stmt)) == SQLITE_ROW);
 
     KeyID const key_id = sqlite3_column_int64(stmt, 0);
     IDLE_ASSERT(key_id);
@@ -292,13 +296,12 @@ public:
     sqlite3_bind_int64(stmt, 1, key);
 
     IDLE_DETAIL_LOG_TRACE("Lock query: '{}'", sqlite3_sql(stmt));
-    IDLE_CHECK(sqlite_try(*env_.db, sqlite3_step(stmt)) == SQLITE_DONE);
+    IDLE_CHECK(sqlite_try(*db_, sqlite3_step(stmt)) == SQLITE_DONE);
 
-    auto const changes = sqlite3_changes(env_.db.get());
+    auto const changes = sqlite3_changes(db_.get());
     if (changes) {
       IDLE_ASSERT(changes == 1);
-      return ID{
-          static_cast<ID::type>(sqlite3_last_insert_rowid(env_.db.get()))};
+      return ID{static_cast<ID::type>(sqlite3_last_insert_rowid(db_.get()))};
     } else {
       return ID{};
     }
@@ -317,9 +320,9 @@ public:
       sqlite3_bind_int64(stmt, 1, key);
 
       IDLE_DETAIL_LOG_TRACE("Create store query: '{}'", sqlite3_sql(stmt));
-      IDLE_CHECK(sqlite_try(*env_.db, sqlite3_step(stmt)) == SQLITE_DONE);
+      IDLE_CHECK(sqlite_try(*db_, sqlite3_step(stmt)) == SQLITE_DONE);
 
-      IDLE_ASSERT(sqlite3_last_insert_rowid(env_.db.get()));
+      IDLE_ASSERT(sqlite3_last_insert_rowid(db_.get()));
     }
   }
 
@@ -336,7 +339,7 @@ public:
     sqlite3_bind_int64(stmt, 1, *id);
 
     IDLE_DETAIL_LOG_TRACE("Select query: '{}'", sqlite3_sql(stmt));
-    IDLE_CHECK(sqlite_try(*env_.db, sqlite3_step(stmt)) == SQLITE_ROW);
+    IDLE_CHECK(sqlite_try(*db_, sqlite3_step(stmt)) == SQLITE_ROW);
 
     auto const type = sqlite3_column_type(stmt, 0);
     if (type != SQLITE_NULL) {
@@ -362,7 +365,7 @@ public:
     sqlite3_bind_int64(stmt, 2, static_cast<std::int64_t>(*id));
 
     IDLE_DETAIL_LOG_TRACE("Update store query: '{}'", sqlite3_sql(stmt));
-    IDLE_CHECK(sqlite_try(*env_.db, sqlite3_step(stmt)) == SQLITE_DONE);
+    IDLE_CHECK(sqlite_try(*db_, sqlite3_step(stmt)) == SQLITE_DONE);
   }
 
   void set(ID&& id, BufferView buffer) override {
@@ -379,7 +382,7 @@ public:
       sqlite3_bind_int64(stmt, 2, static_cast<std::int64_t>(*local));
 
       IDLE_DETAIL_LOG_TRACE("Finalize store query: '{}'", sqlite3_sql(stmt));
-      IDLE_CHECK(sqlite_try(*env_.db, sqlite3_step(stmt)) == SQLITE_DONE);
+      IDLE_CHECK(sqlite_try(*db_, sqlite3_step(stmt)) == SQLITE_DONE);
     }
 
     {
@@ -389,13 +392,14 @@ public:
       sqlite3_bind_int64(stmt, 1, static_cast<std::int64_t>(*local));
 
       IDLE_DETAIL_LOG_TRACE("Unlock store query: '{}'", sqlite3_sql(stmt));
-      IDLE_CHECK(sqlite_try(*env_.db, sqlite3_step(stmt)) == SQLITE_DONE);
+      IDLE_CHECK(sqlite_try(*db_, sqlite3_step(stmt)) == SQLITE_DONE);
     }
   }
 
 private:
   Config config_{defaultLocation()};
   Env env_;
+  SQLite3DB db_{nullptr, nullptr};
 };
 
 Store::ID Store::get(StringView key, ReflectionPtr out) {
