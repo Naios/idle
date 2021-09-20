@@ -187,11 +187,11 @@ void internal_show_graph(SourceLocation const& loc, Context& context) {
 
   auto const path = internal_graph_file_impl(loc);
 
-  std::cerr << format(
-      fmt::emphasis::bold | fmt::fg(fmt::terminal_color::bright_magenta),
-      FMT_STRING("[{:<7}] {}: Showing graphviz graph '{}'...\n"), "dump", loc,
-      path);
-  std::cerr.flush();
+  fmt::print(stderr,
+             fmt::emphasis::bold | fmt::fg(fmt::terminal_color::bright_magenta),
+             FMT_STRING("[{:<7}] {}: Showing graphviz graph '{}'...\n"), "dump",
+             loc, path);
+  fflush(stderr);
 
   {
     std::ofstream file(path, std::ios::trunc);
@@ -212,11 +212,13 @@ void internal_show_graph(SourceLocation const& loc, Context& context) {
       throw std::exception();
     }
   } catch (...) {
-    std::cerr << format(
-        fmt::emphasis::bold | fmt::fg(fmt::terminal_color::bright_magenta),
-        FMT_STRING("[{:<7}] {}: Failed to convert the graph with dot ({})\n"),
-        "dump", loc, src.generic_string());
-    std::cerr.flush();
+    fmt::print(stderr,
+               fmt::emphasis::bold |
+                   fmt::fg(fmt::terminal_color::bright_magenta),
+               FMT_STRING(
+                   "[{:<7}] {}: Failed to convert the graph with dot ({})\n"),
+               "dump", loc, src.generic_string());
+    fflush(stderr);
     return;
   }
 
