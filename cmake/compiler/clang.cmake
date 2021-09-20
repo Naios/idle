@@ -45,6 +45,6 @@ macro(_idle_add_sanitizer SANITIZER SHORT FLAG)
 endmacro()
 
 _idle_add_sanitizer("Address" ASAN "-fsanitize=address")
-_idle_add_sanitizer("Thread" TSAN "-fsanitize=memory")
-_idle_add_sanitizer("Memory" MSAN "-fsanitize=thread")
+_idle_add_sanitizer("Thread" TSAN "-fsanitize=thread")
+_idle_add_sanitizer("Memory" MSAN "-fsanitize=memory")
 _idle_add_sanitizer("UndefinedBehavior" UBSAN "-fsanitize=undefined")
