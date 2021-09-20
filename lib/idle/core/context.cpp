@@ -35,6 +35,10 @@
 #include <idle/core/util/assert.hpp>
 
 namespace idle {
+static void initialize_statics() {
+  detail::initialize_log_level();
+}
+
 int Context::run() {
   return ContextImpl::from(this)->run_impl();
 }
@@ -60,6 +64,7 @@ Ref<Registry> Context::find(Interface::Id const& id) {
 }
 
 Ref<Context> Context::create() {
+  initialize_statics();
   return make_ref<ContextImpl>();
 }
 

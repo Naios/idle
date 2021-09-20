@@ -28,6 +28,7 @@
 
 #include <idle/core/dep/format.hpp>
 #include <idle/core/detail/macros.hpp>
+#include <idle/core/fwd.hpp>
 #include <idle/core/platform.hpp>
 #include <idle/core/util/source_location.hpp>
 #include <idle/core/util/string_view.hpp>
@@ -111,8 +112,6 @@ void internal_log(loglevel level, SourceLocation loc, StringView msg);
 
 #ifndef NDEBUG
 namespace idle {
-class Context;
-
 namespace detail {
 void internal_show_graph(SourceLocation const& loc, Context& context);
 } // namespace detail
@@ -124,5 +123,11 @@ void internal_show_graph(SourceLocation const& loc, Context& context);
 #else
 #  define IDLE_DETAIL_SHOW_GRAPH(IDLE_CONTEXT) (void)0
 #endif
+
+namespace idle {
+namespace detail {
+void initialize_log_level();
+} // namespace detail
+} // namespace idle
 
 #endif // IDLE_CORE_DETAIL_LOG_HPP_INCLUDED

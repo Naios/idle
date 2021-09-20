@@ -30,6 +30,7 @@
 #include <ostream>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <boost/filesystem/path.hpp>
 #include <boost/process.hpp>
 #include <fmt/chrono.h>
@@ -120,7 +121,7 @@ void internal_log(loglevel level, SourceLocation loc, StringView msg) {
   std::cerr.flush();
 }
 
-static loglevel get_default_loglevel() {
+static void set_default_loglevel_from_env(std::atomic<loglevel>& lvl) {
   using namespace boost::process;
   native_environment const environment = boost::this_process::environment();
   auto const var = environment.find("IDLE_INTERNAL_LOGLEVEL");
@@ -130,17 +131,23 @@ static loglevel get_default_loglevel() {
     if (value.size() == 1) {
       switch (value[0]) {
         case '0':
-          return loglevel::trace;
+          lvl = loglevel::trace;
+          break;
         case '1':
-          return loglevel::debug;
+          lvl = loglevel::debug;
+          break;
         case '2':
-          return loglevel::error;
+          lvl = loglevel::error;
+          break;
         default:
-          return loglevel::disabled;
+          lvl = loglevel::disabled;
+          break;
       }
     }
   }
+}
 
+static loglevel get_default_loglevel() {
 #  ifndef IDLE_DETAIL_HAS_DEFAULT_LOG_LEVEL
   return loglevel::disabled;
 #  else
@@ -155,6 +162,8 @@ bool is_internal_loglevel_enabled(loglevel level) noexcept {
 }
 
 void set_internal_loglevel(loglevel level) {
+  initialize_log_level();
+
   internal_loglevel.store(level, std::memory_order_release);
 }
 } // namespace detail
@@ -218,3 +227,17 @@ void internal_show_graph(SourceLocation const& loc, Context& context) {
 } // namespace idle
 
 #endif
+
+namespace idle {
+namespace detail {
+static std::once_flag initialized_;
+
+void initialize_log_level() {
+#if IDLE_DETAIL_HAS_LOG_LEVEL < IDLE_DETAIL_LOG_LEVEL_DISABLED
+  std::call_once(initialized_, [] {
+    set_default_loglevel_from_env(internal_loglevel);
+  });
+#endif
+}
+} // namespace detail
+} // namespace idle
