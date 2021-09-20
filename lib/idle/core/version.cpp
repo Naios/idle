@@ -25,6 +25,7 @@
 
 #include <idle/core/api.hpp>
 #include <idle/core/util/string_view.hpp>
+#include <idle/core/version.hpp>
 
 namespace idle {
 namespace version {
@@ -38,6 +39,7 @@ StringView const cmake_generator;
 StringView const cmake_build_type;
 StringView const cmake_c_flags;
 StringView const cmake_cxx_flags;
+StringView const cmake_linker_flags;
 
 #endif // IDLE_DETAIL_HAS_VERSION
 } // namespace version

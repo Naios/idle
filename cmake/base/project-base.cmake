@@ -52,14 +52,3 @@ target_compile_definitions(
 
 target_compile_options(idle-project-base INTERFACE $<$<CXX_COMPILER_ID:MSVC>:
                                                    /MP>)
-
-if(IDLE_ADDITIONAL_C_FLAGS)
-  message(STATUS "Using additional C flags: ${IDLE_ADDITIONAL_C_FLAGS}")
-  target_compile_options(idle-project-base INTERFACE ${IDLE_ADDITIONAL_C_FLAGS})
-endif()
-
-if(IDLE_ADDITIONAL_CXX_FLAGS)
-  message(STATUS "Using additional CXX flags: ${IDLE_ADDITIONAL_CXX_FLAGS}")
-  target_compile_options(idle-project-base
-                         INTERFACE ${IDLE_ADDITIONAL_CXX_FLAGS})
-endif()

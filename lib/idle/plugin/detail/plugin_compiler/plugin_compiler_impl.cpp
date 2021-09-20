@@ -425,6 +425,11 @@ continuable<> PluginCompilerImpl::cmake_configure() {
                              version::cmake_cxx_flags));
   }
 
+  if (version::cmake_linker_flags) {
+    args.emplace_back(format(FMT_STRING("-DCMAKE_SHARED_LINKER_FLAGS=\"{}\""),
+                             version::cmake_linker_flags));
+  }
+
   if (!config_.generator.empty()) {
     args.insert(args.end(), {"-G", config_.generator});
   }
