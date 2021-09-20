@@ -36,6 +36,8 @@ StringView const cmake_command;
 StringView const cmake_version;
 StringView const cmake_generator;
 StringView const cmake_build_type;
+StringView const cmake_c_flags;
+StringView const cmake_cxx_flags;
 
 #endif // IDLE_DETAIL_HAS_VERSION
 } // namespace version

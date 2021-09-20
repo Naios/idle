@@ -415,6 +415,16 @@ continuable<> PluginCompilerImpl::cmake_configure() {
         format(FMT_STRING("-DCMAKE_BUILD_TYPE={}"), config_.build_type));
   }
 
+  if (version::cmake_c_flags) {
+    args.emplace_back(
+        format(FMT_STRING("-DCMAKE_C_FLAGS=\"{}\""), version::cmake_c_flags));
+  }
+
+  if (version::cmake_cxx_flags) {
+    args.emplace_back(format(FMT_STRING("-DCMAKE_CXX_FLAGS=\"{}\""),
+                             version::cmake_cxx_flags));
+  }
+
   if (!config_.generator.empty()) {
     args.insert(args.end(), {"-G", config_.generator});
   }

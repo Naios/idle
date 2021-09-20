@@ -41,11 +41,19 @@ RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - \
 ENV IDLE_VM=1
 ENV IDLE_INTERNAL_LOGLEVEL=2
 
+ENV LSAN_OPTIONS=verbosity=1:log_threads=1:abort_on_error=1
+ENV ASAN_OPTIONS=verbosity=1:log_threads=1:abort_on_error=1
+ENV UBSAN_OPTIONS=print_stacktrace=1:symbolize=1:halt_on_error=1:print_summary=1
+
 CMD mkdir -p /home/persistent/build \
  && cd /home/persistent/build \
  && echo "- Building target: '${BUILD_TARGET}'" \
  && echo "- Building type: '${BUILD_TYPE}'" \
  && cmake -GNinja -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
           -DIDLE_WITH_INTERNAL_LOG=ON \
+          -DIDLE_WITH_ASAN=${IDLE_WITH_ASAN} \
+          -DIDLE_WITH_TSAN=${IDLE_WITH_TSAN} \
+          -DIDLE_WITH_MSAN=${IDLE_WITH_MSAN} \
+          -DIDLE_WITH_UBSAN=${IDLE_WITH_UBSAN} \
           -DCMAKE_CXX_FLAGS="-ftemplate-backtrace-limit=0" /home/src \
  && ninja ${BUILD_TARGET}

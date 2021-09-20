@@ -46,6 +46,10 @@ include(IdlePackage)
 set(VERSION_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/core/version_impl.cpp.cmake.in")
 set(VERSION_TARGET "${CMAKE_BINARY_DIR}/version_impl.cpp")
 
+string(REPLACE ";" " " IDLE_ADDITIONAL_C_FLAGS_STR "${IDLE_ADDITIONAL_C_FLAGS}")
+string(REPLACE ";" " " IDLE_ADDITIONAL_CXX_FLAGS_STR "${IDLE_ADDITIONAL_CXX_FLAGS}")
+
+
 add_custom_target(
   version ALL
   COMMAND

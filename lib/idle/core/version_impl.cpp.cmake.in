@@ -37,6 +37,8 @@ StringView const cmake_command(R"(@CMAKE_COMMAND@)");
 StringView const cmake_version(R"(@CMAKE_VERSION@)");
 StringView const cmake_generator(R"(@CMAKE_GENERATOR@)");
 StringView const cmake_build_type(IDLE_DETAIL_BUILD_TYPE);
+StringView const cmake_c_flags(R"(@IDLE_ADDITIONAL_C_FLAGS_STR@)");
+StringView const cmake_cxx_flags(R"(@IDLE_ADDITIONAL_CXX_FLAGS_STR@)");
 
 // Not used yet
 // StringView const cmake_source_dir(R"(@SOURCE_DIR@)");

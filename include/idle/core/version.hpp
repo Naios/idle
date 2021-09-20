@@ -35,6 +35,8 @@ extern IDLE_API(idle) StringView const cmake_command;
 extern IDLE_API(idle) StringView const cmake_version;
 extern IDLE_API(idle) StringView const cmake_generator;
 extern IDLE_API(idle) StringView const cmake_build_type;
+extern IDLE_API(idle) StringView const cmake_c_flags;
+extern IDLE_API(idle) StringView const cmake_cxx_flags;
 } // namespace version
 } // namespace idle
 
