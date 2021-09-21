@@ -110,6 +110,7 @@ void SchedulingQueue::push_down(Service& value) {
   IDLE_ASSERT(value.state().isStoppable());
 
   auto const result = down_.insert(&value);
+  (void)result;
 
   // IDLE_ASSERT(result.second); // The element might be in the queue currently
   IDLE_ASSERT(result.first != down_.end());
@@ -124,6 +125,7 @@ void SchedulingQueue::push_up(Service& value) {
   IDLE_ASSERT(value.state().isStartable());
 
   auto const result = up_.insert(&value);
+  (void)result;
 
   // IDLE_ASSERT(result.second); // The element might be in the queue currently
   IDLE_ASSERT(result.first != up_.end());
@@ -138,7 +140,7 @@ static void erase_one(SchedulingQueue::set_t& queue, Service& value) {
 
   IDLE_ASSERT(!contains || *itr == &value);
 
-  std::size_t count = queue.erase(&value);
+  std::size_t const count = queue.erase(&value);
 
   (void)count;
   IDLE_ASSERT((count == 1U) == contains);

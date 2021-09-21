@@ -34,6 +34,7 @@
 #    include <Windows.h>
 #    include <processthreadsapi.h>
 
+// https://docs.microsoft.com/en-us/previous-versions/visualstudio/visual-studio-2008/xcb2z8hs(v=vs.90)?redirectedfrom=MSDN
 #    pragma pack(push, 8)
 typedef struct THREADNAME_INFO {
   DWORD dwType;     // Must be 0x1000.
