@@ -527,7 +527,7 @@ private:
       this->first_ = ptr;
       this->last_ = ptr;
     } else {
-      if (this->first_ && is_first(*right)) {
+      if (right && is_first(*right)) {
         IDLE_ASSERT(!left);
         this->first_ = ptr;
       }
