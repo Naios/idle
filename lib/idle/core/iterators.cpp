@@ -191,7 +191,8 @@ Range<cluster_iterator> clusters(Service& current) noexcept {
       &current,
       {iteration_flags_t::iterate_exports, iteration_flags_t::iterate_imports});
 
-  return make_range(cluster_iterator(current), cluster_iterator(*end));
+  return make_range(cluster_iterator(current),
+                    end ? cluster_iterator(*end) : cluster_iterator{});
 }
 
 void parent_service_iterator::increment() noexcept {
