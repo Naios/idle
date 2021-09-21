@@ -33,16 +33,17 @@
 #include <idle/core/dep/function.hpp>
 
 namespace cti {
-extern template class IDLE_API_IMPORT_IF_IMPORTED
+IDLE_API_EXTERN_IF_NOT_IMPORTED template class IDLE_API_IMPORT_IF_IMPORTED
     continuable_base<detail::erasure::continuation<>, signature_arg_t<>>;
 
-extern template class IDLE_API_IMPORT_IF_IMPORTED result<>;
+IDLE_API_EXTERN_IF_NOT_IMPORTED template class IDLE_API_IMPORT_IF_IMPORTED
+    result<>;
 } // namespace cti
 
 namespace fu2 {
 inline namespace abi_400 {
 namespace detail {
-extern template class IDLE_API_IMPORT_IF_IMPORTED
+IDLE_API_EXTERN_IF_NOT_IMPORTED template class IDLE_API_IMPORT_IF_IMPORTED
     function<config<true, false, cti::continuation_capacity<>>,
              property<true, false,
                       void(cti::promise_base<cti::detail::erasure::callback<>,

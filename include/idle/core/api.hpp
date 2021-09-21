@@ -63,10 +63,17 @@
 #define IDLE_API(TARGET_NAME) IDLE_DETAIL_API_IMPL1(TARGET_NAME##_EXPORTS)
 
 // idle_EXPORTS is defined by CMake automatically
-#ifdef idle_EXPORTS
+#if !defined(IDLE_HAS_DYNAMIC_LINKING) || defined(idle_EXPORTS)
 #  define IDLE_API_IMPORT_IF_IMPORTED
 #else
 #  define IDLE_API_IMPORT_IF_IMPORTED IDLE_API_IMPORT
+#endif
+
+// idle_EXPORTS is defined by CMake automatically
+#if !defined(IDLE_HAS_DYNAMIC_LINKING) || defined(idle_EXPORTS)
+#  define IDLE_API_EXTERN_IF_NOT_IMPORTED extern
+#else
+#  define IDLE_API_EXTERN_IF_NOT_IMPORTED
 #endif
 
 #if defined(IDLE_COMPILER_CLANG) || defined(IDLE_COMPILER_GCC)

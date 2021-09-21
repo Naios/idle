@@ -50,5 +50,10 @@ target_compile_definitions(
             $<$<AND:$<PLATFORM_ID:Windows>,$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>>:
             _WIN64>)
 
+target_compile_options(
+  idle-project-base
+  INTERFACE $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:
+            -fvisibility=hidden>)
+
 target_compile_options(idle-project-base INTERFACE $<$<CXX_COMPILER_ID:MSVC>:
                                                    /MP>)

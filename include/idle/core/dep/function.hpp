@@ -32,11 +32,13 @@
 namespace fu2 {
 inline namespace abi_400 {
 namespace detail {
-extern template class IDLE_API_IMPORT_IF_IMPORTED function<
-    config<true, true, capacity_default>, property<true, false, void()>>;
+IDLE_API_EXTERN_IF_NOT_IMPORTED template class IDLE_API_IMPORT_IF_IMPORTED
+    function<config<true, true, capacity_default>,
+             property<true, false, void()>>;
 
-extern template class IDLE_API_IMPORT_IF_IMPORTED function<
-    config<true, false, capacity_default>, property<true, false, void()>>;
+IDLE_API_EXTERN_IF_NOT_IMPORTED template class IDLE_API_IMPORT_IF_IMPORTED
+    function<config<true, false, capacity_default>,
+             property<true, false, void()>>;
 } // namespace detail
 } // namespace abi_400
 } // namespace fu2
