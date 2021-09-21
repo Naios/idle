@@ -73,9 +73,13 @@ void set_current_thread_name(Str const& str) noexcept {
 
 void set_this_thread_name(StringView name) noexcept {
   std::size_t const size = std::min(this_thread_name_.size() - 1, name.size());
-  std::memcpy(this_thread_name_.data(), name.data(), size);
-  this_thread_name_[size] = '\0';
   this_thread_name_length_ = size;
+
+  if (size) {
+    std::memcpy(this_thread_name_.data(), name.data(), size);
+  }
+
+  this_thread_name_[size] = '\0';
 
 #ifndef NDEBUG
 #  ifdef IDLE_PLATFORM_WINDOWS
