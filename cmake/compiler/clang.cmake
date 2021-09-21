@@ -37,14 +37,21 @@ macro(_idle_add_sanitizer SANITIZER SHORT FLAG)
 
     _idle_add_flag(CMAKE_C_FLAGS "${FLAG}")
     _idle_add_flag(CMAKE_CXX_FLAGS "${FLAG}")
-    _idle_add_flag(CMAKE_C_FLAGS "-fno-optimize-sibling-calls")
+
     _idle_add_flag(CMAKE_C_FLAGS "-fno-omit-frame-pointer")
-    _idle_add_flag(CMAKE_CXX_FLAGS "-fno-optimize-sibling-calls")
     _idle_add_flag(CMAKE_CXX_FLAGS "-fno-omit-frame-pointer")
+
+    _idle_add_flag(CMAKE_C_FLAGS "-fno-optimize-sibling-calls")
+    _idle_add_flag(CMAKE_CXX_FLAGS "-fno-optimize-sibling-calls")
   endif()
 endmacro()
 
-_idle_add_sanitizer("Address" ASAN "-fsanitize=address")
+# ASan falsely detects ODR violations from private symbols in shared libraries:
+# https://github.com/google/sanitizers/issues/1017
+# https://stackoverflow.com/questions/57390595/asan-detects-odr-violation-of-vtable-of-class-which-is-shared-with-dynamically-l
+_idle_add_sanitizer("Address" ASAN
+                    "-fsanitize=address -mllvm -asan-use-private-alias=1")
+
 _idle_add_sanitizer("Thread" TSAN "-fsanitize=thread")
 _idle_add_sanitizer("Memory" MSAN "-fsanitize=memory")
 _idle_add_sanitizer("UndefinedBehavior" UBSAN "-fsanitize=undefined")
