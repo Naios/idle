@@ -55,12 +55,10 @@ constexpr auto reflection(Fields&&... fields) noexcept {
       {std::forward<Fields>(fields)...});
 }
 
-template <typename T, typename Class>
-art::FieldType field(char const* name, T Class::*accessor,
+template <typename T>
+art::FieldType field(char const* name, std::size_t offset,
                      char const* comment = {}) noexcept {
-  // TODO Improve this once offset calculation can be constexpr
-  std::size_t const offset = reinterpret_cast<std::size_t>(
-      std::addressof(static_cast<Class*>(nullptr)->*accessor));
+  IDLE_ASSERT(name);
 
   constexpr art::TypeOf<T> type;
   return art::FieldType(type(), art::detail::subtypeSelect(type, identity<T>{}),
@@ -70,9 +68,11 @@ art::FieldType field(char const* name, T Class::*accessor,
 
 #define IDLE_DETAIL_FIELD(TYPE, x)                                             \
   IDLE_DETAIL_IIF(IDLE_DETAIL_IS_PAREN(x))                                     \
-  (::idle::field(IDLE_DETAIL_STRINGIFY(IDLE_DETAIL_ARGS_FIRST x),              \
-                 &TYPE::IDLE_DETAIL_ARGS_FIRST x, IDLE_DETAIL_ARGS_REST x),    \
-   ::idle::field(#x, &TYPE::x))
+  (::idle::field<decltype(TYPE::IDLE_DETAIL_ARGS_FIRST x)>(                    \
+       IDLE_DETAIL_STRINGIFY(IDLE_DETAIL_ARGS_FIRST x),                        \
+       IDLE_DETAIL_OFFSETOF(TYPE, IDLE_DETAIL_ARGS_FIRST x),                   \
+       IDLE_DETAIL_ARGS_REST x),                                               \
+   ::idle::field<decltype(TYPE::x)>(#x, IDLE_DETAIL_OFFSETOF(TYPE, x)))
 
 /// Defines the reflection function of type TYPE:
 /// ```

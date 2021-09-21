@@ -350,4 +350,12 @@ private:
 } // namespace art
 } // namespace idle
 
+#ifdef offsetof
+#  define IDLE_DETAIL_OFFSETOF(CLASS, MEMBER) offsetof(CLASS, MEMBER)
+#else
+#  define IDLE_DETAIL_OFFSETOF(CLASS, MEMBER)                                  \
+    reinterpret_cast<std::size_t>(                                             \
+        std::addressof((static_cast<CLASS*>(nullptr)->MEMBER)))
+#endif
+
 #endif // IDLE_SERVICE_DETAIL_ART_REFLECTION_TREE_IMPL_HPP_INCLUDED
