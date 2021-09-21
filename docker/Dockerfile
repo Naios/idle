@@ -43,6 +43,7 @@ ENV IDLE_INTERNAL_LOGLEVEL=2
 
 ENV LSAN_OPTIONS=verbosity=1:log_threads=1:abort_on_error=1
 ENV ASAN_OPTIONS=verbosity=1:log_threads=1:abort_on_error=1:use_odr_indicator=1
+ENV MSAN_OPTIONS=verbosity=1:log_threads=1:abort_on_error=1
 ENV UBSAN_OPTIONS=print_stacktrace=1:symbolize=1:halt_on_error=1:print_summary=1
 
 CMD mkdir -p /home/persistent/build \
