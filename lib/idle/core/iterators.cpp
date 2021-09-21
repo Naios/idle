@@ -170,7 +170,8 @@ Range<cluster_service_iterator> cluster_members(Service& current) noexcept {
   Service* const end = next_parent_or_neighbour(
       &head, {iteration_flags_t::iterate_imports});
   return make_range(cluster_service_iterator(current),
-                    cluster_service_iterator(*end));
+                    end ? cluster_service_iterator(*end)
+                        : cluster_service_iterator{});
 }
 
 Range<cluster_service_iterator> all_cluster_members(Service& current) noexcept {
