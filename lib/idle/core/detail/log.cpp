@@ -105,20 +105,18 @@ static auto print_this_thread_name_or_id() {
 }
 
 void internal_log(loglevel level, SourceLocation loc, StringView msg) {
-  std::string fm = format(fmt::emphasis::bold | fmt::fg(color_of_level(level)),
-                          FMT_STRING("[{:<4}] {}: {}\n"),
-                          print_this_thread_name_or_id(), loc, msg);
+  fmt::print(stderr, fmt::emphasis::bold | fmt::fg(color_of_level(level)),
+             FMT_STRING("[{:<4}] {}: {}\n"), print_this_thread_name_or_id(),
+             loc, msg);
+
+  fflush(stderr);
 
   /*std::ostringstream ss;
   indentation_stream indentation(ss, {11});
   guidline_stream guidline(indentation, {terminal_width});
   guidline << fm;
   ss << '\n';
-
   std::cerr << ss.str();*/
-  std::cerr << fm;
-
-  std::cerr.flush();
 }
 
 static void set_default_loglevel_from_env(std::atomic<loglevel>& lvl) {
