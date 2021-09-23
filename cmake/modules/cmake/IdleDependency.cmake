@@ -51,9 +51,23 @@ function(_idle_check_dependency_version LIBRARY_NAME PACKAGE_VERSION
 endfunction()
 
 function(idle_dependency PACKAGE)
-  set(arg_opt NO_LICENSE_FILE EXTERNAL)
-  set(arg_single AS LICENSE_FILE SUBDIRECTORY URL SHA512 BASE_DIR)
-  set(arg_multi OPTIONS FILTER PATCH RENAME INSTALL_RUNTIME CONFIGURATIONS)
+  set(arg_opt NO_LICENSE_FILE EXTERNAL NO_FIND_PACKAGE DRY_RUN)
+  set(arg_single
+      CD
+      AS
+      LICENSE_FILE
+      SUBDIRECTORY
+      URL
+      SHA512
+      BASE_DIR)
+  set(arg_multi
+      OPTIONS
+      FILTER
+      PATCH
+      RENAME
+      INSTALL_RUNTIME
+      CONFIGURATIONS
+      TARGETS)
   cmake_parse_arguments(IDLE_DEPENDENCY "${arg_opt}" "${arg_single}"
                         "${arg_multi}" ${ARGN})
 
@@ -107,16 +121,22 @@ function(idle_dependency PACKAGE)
   set(${LIBRARY_NAME}_DIR "${PACKAGE_LOCATION}")
   set(${LIBRARY_NAME}_FOUND ON)
 
+  if(IDLE_DEPENDENCY_CD)
+    set(PACKAGE_WORKING_DIRECTORY "${PACKAGE_LOCATION}/${IDLE_DEPENDENCY_CD}")
+  else()
+    set(PACKAGE_WORKING_DIRECTORY "${PACKAGE_LOCATION}")
+  endif()
+
   if(IDLE_DEPENDENCY_EXTERNAL)
     set(PACKAGE_COMMAND_LINE_ARGS)
 
     if(CMAKE_C_COMPILER)
       list(APPEND PACKAGE_COMMAND_LINE_ARGS
-           "-DCMAKE_C_COMPILER=\"${CMAKE_C_COMPILER}\"")
+           "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}")
     endif()
     if(CMAKE_CXX_COMPILER)
       list(APPEND PACKAGE_COMMAND_LINE_ARGS
-           "-DCMAKE_CXX_COMPILER=\"${CMAKE_CXX_COMPILER}\"")
+           "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
     endif()
 
     # get_property(IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
@@ -171,10 +191,10 @@ function(idle_dependency PACKAGE)
           FATAL_ERROR
             "There are no configurations to build (IS_MULTI_CONFIG=OFF)!")
       endif()
-
     endif()
 
     foreach(CURRENT_OPTION IN LISTS IDLE_DEPENDENCY_OPTIONS)
+      string(REPLACE "@" "\\;" CURRENT_OPTION "${CURRENT_OPTION}")
       list(APPEND PACKAGE_COMMAND_LINE_ARGS "-D${CURRENT_OPTION}")
     endforeach()
 
@@ -205,9 +225,14 @@ function(idle_dependency PACKAGE)
         message(STATUS "     with: ${CURRENT_ARG}")
       endforeach()
 
+      if(IDLE_DEPENDENCY_DRY_RUN)
+        message(FATAL_ERROR "Skipping CMake invocation (dry run)")
+        return()
+      endif()
+
       execute_process(
         COMMAND
-          "${CMAKE_COMMAND}" "${PACKAGE_LOCATION}"
+          "${CMAKE_COMMAND}" "${PACKAGE_WORKING_DIRECTORY}"
           # "-G" "${CMAKE_GENERATOR}"
           "-DCMAKE_INSTALL_PREFIX=${INSTALL_PACKAGE_LOCATION}"
           ${CURRENT_BUILD_TYPE} ${PACKAGE_COMMAND_LINE_ARGS}
@@ -220,28 +245,40 @@ function(idle_dependency PACKAGE)
       endif()
 
       if(IS_MULTI_CONFIG)
-        message(
-          STATUS
-            "Installing configurations through multi-config generator: ${CURRENT_CONFIGURATION_TYPES}"
-        )
+        message(STATUS "Installing configurations through multi-config "
+                       "generator: ${CURRENT_CONFIGURATION_TYPES}")
       else()
         message(
           STATUS "Installing configuration: ${CURRENT_CONFIGURATION_TYPES}")
       endif()
 
-      foreach(CURRENT_CONFIGURATION IN LISTS CURRENT_CONFIGURATION_TYPES)
-        message(STATUS "Installing ${PACKAGE} (${CURRENT_CONFIGURATION})\n"
-                       "     into '${INSTALL_PACKAGE_LOCATION}'...")
-        execute_process(
-          COMMAND "${CMAKE_COMMAND}" "--build" "${BUILD_PACKAGE_LOCATION}"
-                  "--target" "INSTALL" "--config" "${CURRENT_CONFIGURATION}"
-          WORKING_DIRECTORY "${BUILD_PACKAGE_LOCATION}"
-          RESULT_VARIABLE PROCESS_RESULT)
-
-        if(NOT PROCESS_RESULT EQUAL 0)
-          message(FATAL_ERROR "The build has failed!"
-                              "See the log for details.")
+      if(NOT IDLE_DEPENDENCY_TARGETS)
+        if(MSVC)
+          list(APPEND IDLE_DEPENDENCY_TARGETS "INSTALL")
+        else()
+          list(APPEND IDLE_DEPENDENCY_TARGETS "install")
         endif()
+      endif()
+
+      foreach(CURRENT_CONFIGURATION IN LISTS CURRENT_CONFIGURATION_TYPES)
+        foreach(CURRENT_TARGET IN LISTS IDLE_DEPENDENCY_TARGETS)
+          message(
+            STATUS
+              "Building target ${CURRENT_TARGET} of ${PACKAGE} (${CURRENT_CONFIGURATION})\n"
+              "     into '${INSTALL_PACKAGE_LOCATION}'...")
+          execute_process(
+            COMMAND
+              "${CMAKE_COMMAND}" "--build" "${BUILD_PACKAGE_LOCATION}"
+              "--target" "${CURRENT_TARGET}" "--config"
+              "${CURRENT_CONFIGURATION}"
+            WORKING_DIRECTORY "${BUILD_PACKAGE_LOCATION}"
+            RESULT_VARIABLE PROCESS_RESULT)
+
+          if(NOT PROCESS_RESULT EQUAL 0)
+            message(FATAL_ERROR "The build has failed! "
+                                "See the log for details.")
+          endif()
+        endforeach()
       endforeach()
 
       message(
@@ -257,8 +294,19 @@ function(idle_dependency PACKAGE)
     endif()
 
     set(${LIBRARY_NAME}_DIR "${INSTALL_PACKAGE_LOCATION}")
-    find_package(${LIBRARY_NAME} REQUIRED HINTS "${INSTALL_PACKAGE_LOCATION}"
-                 PATHS "${INSTALL_PACKAGE_LOCATION}")
+
+    if(NOT IDLE_DEPENDENCY_NO_FIND_PACKAGE)
+      find_package(${LIBRARY_NAME} REQUIRED HINTS "${INSTALL_PACKAGE_LOCATION}"
+                   PATHS "${INSTALL_PACKAGE_LOCATION}")
+    endif()
+
+    # Pass PACKAGE_DIR and PACKAGE_FOUND downwards
+    set(${LIBRARY_NAME}_DIR
+        "${${LIBRARY_NAME}_DIR}"
+        PARENT_SCOPE)
+    set(${LIBRARY_NAME}_FOUND
+        ${${LIBRARY_NAME}_FOUND}
+        PARENT_SCOPE)
 
   else() # NOT IDLE_DEPENDENCY_EXTERNAL
     cmake_policy(PUSH)
@@ -271,6 +319,7 @@ function(idle_dependency PACKAGE)
       string(REPLACE "=" ";" CURRENT_OPTION ${CURRENT_OPTION})
       list(GET CURRENT_OPTION 0 OPTION_KEY)
       list(GET CURRENT_OPTION 1 OPTION_VALUE)
+      string(REPLACE "@" "\\;" OPTION_VALUE "${OPTION_VALUE}")
       set(${OPTION_KEY} ${OPTION_VALUE})
     endforeach()
 
@@ -279,8 +328,8 @@ function(idle_dependency PACKAGE)
                        "${CMAKE_BINARY_DIR}/package_bin/${LIBRARY_NAME}")
     else()
       add_subdirectory(
-        "${PACKAGE_LOCATION}" "${CMAKE_BINARY_DIR}/package_bin/${LIBRARY_NAME}"
-        EXCLUDE_FROM_ALL)
+        "${PACKAGE_WORKING_DIRECTORY}"
+        "${CMAKE_BINARY_DIR}/package_bin/${LIBRARY_NAME}" EXCLUDE_FROM_ALL)
     endif()
 
     set(CMAKE_POLICY_DEFAULT_CMP0077 ${OLD_CMAKE_POLICY_DEFAULT_CMP0077})
@@ -288,7 +337,7 @@ function(idle_dependency PACKAGE)
 
     # Pass PACKAGE_DIR and PACKAGE_FOUND downwards
     set(${LIBRARY_NAME}_DIR
-        "${LIBRARY_NAME}_DIR"
+        "{${LIBRARY_NAME}_DIR}"
         PARENT_SCOPE)
     set(${LIBRARY_NAME}_FOUND
         ${${LIBRARY_NAME}_FOUND}

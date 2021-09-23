@@ -22,17 +22,25 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #]]
 
-macro(_idle_add_flag VAR FLAG)
-  string(FIND "${${VAR}}" "${FLAG}" FLAG_FOUND)
+# Adds the given arguments to the CMake (cache) variable
+macro(_idle_add_flags VAR)
+  foreach(FLAG ${ARGN})
+    string(FIND "${${VAR}}" "${FLAG}" FLAG_FOUND)
 
-  if("${FLAG_FOUND}" STREQUAL "-1")
-    set(${VAR} "${${VAR}} ${FLAG}")
+    if("${FLAG_FOUND}" STREQUAL "-1")
+      message(STATUS "Adding '${FLAG}' to ${VAR}")
 
-    list(APPEND IDLE_ADDITIONAL_${VAR} "${FLAG}")
-    set(IDLE_ADDITIONAL_${VAR}_STR "${IDLE_ADDITIONAL_${VAR}_STR} ${FLAG}")
+      set(${VAR} "${${VAR}} ${FLAG}")
 
-    message(STATUS "Adding ${FLAG} to ${VAR}")
-  endif()
+      list(APPEND IDLE_ADDITIONAL_${VAR} "${FLAG}")
+
+      if(IDLE_ADDITIONAL_${VAR}_STR)
+        set(IDLE_ADDITIONAL_${VAR}_STR "${IDLE_ADDITIONAL_${VAR}_STR} ${FLAG}")
+      else()
+        set(IDLE_ADDITIONAL_${VAR}_STR "${FLAG}")
+      endif()
+    endif()
+  endforeach()
 endmacro()
 
 include(cmake/configure_compiler.cmake)

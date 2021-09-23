@@ -47,9 +47,7 @@
 
 namespace idle {
 static void cmake_escape(std::string& str) {
-#ifdef IDLE_PLATFORM_WINDOWS
   boost::algorithm::replace_all(str, " ", "\\ ");
-#endif
 }
 
 static bool is_vs_generator(std::string const& generator) noexcept {
@@ -417,17 +415,22 @@ continuable<> PluginCompilerImpl::cmake_configure() {
 
   if (version::cmake_c_flags) {
     args.emplace_back(
-        format(FMT_STRING("-DCMAKE_C_FLAGS=\"{}\""), version::cmake_c_flags));
+        format(FMT_STRING("-DCMAKE_C_FLAGS={}"), version::cmake_c_flags));
   }
 
   if (version::cmake_cxx_flags) {
-    args.emplace_back(format(FMT_STRING("-DCMAKE_CXX_FLAGS=\"{}\""),
-                             version::cmake_cxx_flags));
+    args.emplace_back(
+        format(FMT_STRING("-DCMAKE_CXX_FLAGS={}"), version::cmake_cxx_flags));
   }
 
-  if (version::cmake_linker_flags) {
-    args.emplace_back(format(FMT_STRING("-DCMAKE_SHARED_LINKER_FLAGS=\"{}\""),
-                             version::cmake_linker_flags));
+  if (version::cmake_exe_linker_flags) {
+    args.emplace_back(format(FMT_STRING("-DCMAKE_EXE_LINKER_FLAGS={}"),
+                             version::cmake_exe_linker_flags));
+  }
+
+  if (version::cmake_shared_linker_flags) {
+    args.emplace_back(format(FMT_STRING("-DCMAKE_SHARED_LINKER_FLAGS={}"),
+                             version::cmake_shared_linker_flags));
   }
 
   if (!config_.generator.empty()) {
