@@ -163,27 +163,31 @@ continuable<> ProcessGroupImpl::onStart() {
 }
 
 continuable<> ProcessGroupImpl::onStop() {
-  return [this](auto&& promise) {
-    boost::asio::post([this, promise = std::forward<decltype(promise)>(
-                                 promise)]() mutable {
-      try {
-        group_->terminate();
-      } catch (std::exception const& e) {
-        IDLE_DETAIL_LOG_ERROR("ProcessGroupImpl terminate threw '{}'!",
-                              e.what());
-      } catch (...) {
-        IDLE_DETAIL_LOG_ERROR("ProcessGroupImpl terminate threw "
-                              "an unknown exception!");
-      }
+  return async([this] {
+    std::error_code ec;
 
-      group_.reset();
-      IDLE_ASSERT(!group_);
+    group_->terminate(ec);
+    if (ec) {
+      IDLE_DETAIL_LOG_ERROR("ProcessGroupImpl terminate failed with '{}'!",
+                            ec.message());
 
-      root().event_loop().post([this, promise = std::move(promise)]() mutable {
-        strand_.reset();
-        promise.set_value();
-      });
-    });
-  };
+      ec = {};
+    }
+
+    // TODO Use an async wait without blocking the event loop!
+    group_->wait(ec);
+    if (ec) {
+      IDLE_DETAIL_LOG_ERROR("ProcessGroupImpl wait failed with '{}'!",
+                            ec.message());
+
+      ec = {};
+    }
+
+    group_.reset();
+    IDLE_ASSERT(!group_);
+
+    IDLE_ASSERT(strand_);
+    strand_.reset();
+  });
 }
 } // namespace idle
