@@ -24,6 +24,7 @@ RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - \
  && add-apt-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-12 main" \
  && apt-get update \
  && DEBIAN_FRONTEND="noninteractive" apt-get install -y \
+    lld \
     clang-12 \
     gcc-9 g++-9 \
     gcc-10 g++-10 \

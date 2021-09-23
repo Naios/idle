@@ -114,7 +114,7 @@ Cluster::Cluster(bool is_auto_created)
   , epoch_{0U} {}
 
 void setCluster(Service& current, Cluster& c) noexcept {
-  if (!isa<Import>(current.parent()) && (current.cluster_ == nullptr)) {
+  if ((current.cluster_ == nullptr) && !isa<Import>(current.parent())) {
     current.cluster_ = &c;
   }
 }

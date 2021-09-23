@@ -29,6 +29,8 @@ macro(_idle_add_sanitizer SANITIZER SHORT)
   option(IDLE_WITH_${SHORT} "Enable clang ${SANITIZER} sanitizer" OFF)
 
   if(IDLE_WITH_${SHORT})
+    message(STATUS "Enabling ${SANITIZER} sanitizer")
+
     if(IDLE_SANITIZER_SET)
       message(FATAL_ERROR "Setting more than one sanitizer is not supported!")
     endif()

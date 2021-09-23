@@ -377,7 +377,7 @@ decltype(auto) visit(Part const& current, T&& visitor) {
 }
 
 class IDLE_API(idle) Inheritance {
-  friend class Service;
+  friend Service;
 
 public:
   enum class Relation : std::uint8_t { parent, anchor };
@@ -385,7 +385,9 @@ public:
 private:
   explicit Inheritance(Ref<Part> parent, Relation relation)
     : relation_(relation)
-    , parent_(std::move(parent)) {}
+    , parent_(std::move(parent)) {
+    IDLE_ASSERT(parent_);
+  }
 
 public:
   template <typename T,

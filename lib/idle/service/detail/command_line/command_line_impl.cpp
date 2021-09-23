@@ -38,6 +38,7 @@
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <idle/core/api.hpp>
+#include <idle/core/detail/log.hpp>
 #include <idle/service/detail/command_line/command_line_impl.hpp>
 #include <replxx/replxx.hxx>
 #include <replxx/util.h>
@@ -217,7 +218,10 @@ void CommandLineImpl::onRun() {
         }
 
         cinput = repl_->input(current);
-      } catch (std::runtime_error const&) {
+      } catch (std::runtime_error const& e) {
+        IDLE_DETAIL_LOG_ERROR("Failed to request the input from the repl: '{}'",
+                              e.what());
+
         // Currently write fails spuriously?
         // Probably the best here is to try it again
         cinput = nullptr;
@@ -392,7 +396,7 @@ void CommandLineImpl::onActivityUpdate(Activity const& activity) noexcept {
   debounce();
 }
 
-static std::string const progress_bar = "-\\|/-\\|/";
+static constexpr StringView progress_bar = "-\\|/-\\|/";
 
 void CommandLineImpl::update(Clock::time_point now) noexcept {
   IDLE_ASSERT(root().is_on_event_loop());
@@ -408,7 +412,7 @@ void CommandLineImpl::update(Clock::time_point now) noexcept {
     auto const step = step_ % progress_bar.size();
     step_ = step + 1U;
 
-    char const current = progress_bar.at(step);
+    char const current = progress_bar[step];
 
     setPrompt(fmt::format(FMT_STRING("{} [{}{}] {}"), current, //
                           (*activities.begin())->name(),

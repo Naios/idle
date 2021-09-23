@@ -28,7 +28,7 @@ macro(_idle_add_flags VAR)
     string(FIND "${${VAR}}" "${FLAG}" FLAG_FOUND)
 
     if("${FLAG_FOUND}" STREQUAL "-1")
-      message(STATUS "Adding '${FLAG}' to ${VAR}")
+      # message(STATUS "Adding '${FLAG}' to ${VAR}")
 
       set(${VAR} "${${VAR}} ${FLAG}")
 
