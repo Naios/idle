@@ -261,16 +261,19 @@ private:
   static constexpr std::size_t delimiter_length = 1;
 
   static void async_read_line(Ref<Stream>&& stream) {
+    IDLE_ASSERT(stream);
     Stream& current = *stream;
 
     boost::asio::async_read_until(
         current.pipe, current.buffer, delimiter,
         [stream = std::move(stream)](boost::system::error_code const& ec,
                                      std::size_t length) mutable {
+          IDLE_ASSERT(stream);
           IDLE_ASSERT(length != 0 || ec);
 
           if (ec) {
-            if (ec != boost::asio::error::broken_pipe) {
+            if (ec != boost::asio::error::broken_pipe &&
+                ec != boost::asio::error::misc_errors::eof) {
               IDLE_DETAIL_LOG_ERROR(
                   "async_read_line: Size: {}, Value: {}, Message: '{}'", length,
                   ec.value(), ec.message());

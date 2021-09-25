@@ -74,10 +74,7 @@ public:
   using Service::parent;
 
   /// Runs the context, this will block the current thread
-  /// until stop is called.
-  ///
-  /// By default this will run the internal threadpool with a thread count
-  /// which size matches the hardware concurrency.
+  /// until Context::stop is called.
   int run();
 
   /// Updates all outdated or unhealthy services in order to be bring them into
