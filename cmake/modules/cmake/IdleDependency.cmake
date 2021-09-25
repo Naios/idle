@@ -50,6 +50,16 @@ function(_idle_check_dependency_version LIBRARY_NAME PACKAGE_VERSION
   endif()
 endfunction()
 
+function(_idle_install_shared_library_target TARGET)
+  if(TARGET "${TARGET}")
+    get_target_property(TARGET_TYPE ${TARGET} TYPE)
+    if(TARGET_TYPE STREQUAL SHARED_LIBRARY)
+      install(FILES "$<TARGET_FILE:${TARGET}>"
+              DESTINATION "${CMAKE_INSTALL_PREFIX}")
+    endif()
+  endif()
+endfunction()
+
 function(_idle_dependency_ex PACKAGE)
   set(arg_opt NO_LICENSE_FILE EXTERNAL NO_FIND_PACKAGE DRY_RUN)
   set(arg_single
@@ -356,13 +366,9 @@ function(_idle_dependency_ex PACKAGE)
 
   if(IDLE_DEPENDENCY_INSTALL_RUNTIME)
     foreach(CURRENT_INSTALL_RUNTIME IN LISTS IDLE_DEPENDENCY_INSTALL_RUNTIME)
-      if(TARGET "${CURRENT_INSTALL_RUNTIME}")
-        get_target_property(TARGET_TYPE ${CURRENT_INSTALL_RUNTIME} TYPE)
-        if(TARGET_TYPE STREQUAL SHARED_LIBRARY)
-          install(FILES "$<TARGET_FILE:${CURRENT_INSTALL_RUNTIME}>"
-                  DESTINATION "${CMAKE_INSTALL_PREFIX}")
-        endif()
-      endif()
+      _idle_install_shared_library_target("${CURRENT_INSTALL_RUNTIME}"
+                                          "${CMAKE_INSTALL_PREFIX}")
+
     endforeach()
   endif()
 
@@ -392,6 +398,13 @@ macro(idle_dependency)
     unset(IDLE_DEPENDENCY_FIND_PACKAGE_ARGS)
 
     cmake_policy(POP)
+  endif()
+
+  if(CMAKE_FIND_PACKAGE_NAME AND ${CMAKE_FIND_PACKAGE_NAME}_FIND_COMPONENTS)
+    foreach(COMPONENT IN LISTS ${CMAKE_FIND_PACKAGE_NAME}_FIND_COMPONENTS)
+      _idle_install_shared_library_target(
+        "${CMAKE_FIND_PACKAGE_NAME}::${COMPONENT}")
+    endforeach()
   endif()
 endmacro()
 
