@@ -378,12 +378,20 @@ function(_idle_dependency_ex PACKAGE)
       PARENT_SCOPE)
 endfunction()
 
-macro(idle_dependency _IDLE_PACKAGE)
-  _idle_dependency_ex("${_IDLE_PACKAGE}" ${ARGN})
+macro(idle_dependency)
+  _idle_dependency_ex(${ARGN})
 
   if(IDLE_DEPENDENCY_FIND_PACKAGE_ARGS)
+    cmake_policy(PUSH)
+
+    if(POLICY CMP0074)
+      cmake_policy(SET CMP0074 NEW) # Use PACKAGE_ROOT variables
+    endif()
+
     find_package(${IDLE_DEPENDENCY_FIND_PACKAGE_ARGS})
     unset(IDLE_DEPENDENCY_FIND_PACKAGE_ARGS)
+
+    cmake_policy(POP)
   endif()
 endmacro()
 
