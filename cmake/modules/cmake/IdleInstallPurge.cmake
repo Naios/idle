@@ -54,6 +54,10 @@ endfunction()
 
 # Remove targets on install, that are not in the exclude list
 function(idle_install_purge)
+  if(NOT CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+    return()
+  endif()
+
   install(
     CODE "
       include(\"${CMAKE_CURRENT_FUNCTION_LIST_FILE}\")

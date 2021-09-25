@@ -340,24 +340,26 @@ macro(idle_enable_packages)
   if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/dep")
     list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/dep")
 
-    idle_package_cache_dir(PACKAGE_CACHE_DIR)
+    if(NOT PACKAGE_CACHE_DIR)
+      idle_package_cache_dir(PACKAGE_CACHE_DIR)
 
-    if((NOT DEFINED IDLE_PACKAGE_CACHE) AND ("$ENV{IDLE_PACKAGE_CACHE}" STREQUAL
-                                             ""))
-      message(
-        "I will use the build dir as cache directory for dependencies.\n"
-        " - Enable a cross project build cache by defining IDLE_PACKAGE_CACHE "
-        "as environment variable or CMake variable!")
-
-      if(WIN32)
+      if((NOT DEFINED IDLE_PACKAGE_CACHE) AND ("$ENV{IDLE_PACKAGE_CACHE}"
+                                               STREQUAL ""))
         message(
-          " - 'C:/Users/$ENV{USERNAME}/AppData/Local/idle/cache' is recommended!"
-        )
+          "I will use the build dir as cache directory for dependencies.\n"
+          " - Enable a cross project build cache by defining IDLE_PACKAGE_CACHE "
+          "as environment variable or CMake variable!")
+
+        if(WIN32)
+          message(
+            " - 'C:/Users/$ENV{USERNAME}/AppData/Local/idle/cache' is recommended!"
+          )
+        else()
+          message(" - '~/.idle/cache' is recommended!")
+        endif()
       else()
-        message(" - '~/.idle/cache' is recommended!")
+        message(STATUS "Using '${PACKAGE_CACHE_DIR}' as package cache dir")
       endif()
-    else()
-      message(STATUS "Using '${PACKAGE_CACHE_DIR}' as package cache dir")
     endif()
   endif()
 endmacro()

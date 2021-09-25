@@ -97,6 +97,14 @@ function(idle_project_add_plugins PLUGIN_SOURCE_DIR)
 endfunction()
 
 function(idle_project_add_target_polish PLUGIN_SOURCE_DIR)
+  if(NOT CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+    return()
+  endif()
+
+  if(NOT TARGET idle::polish)
+    return()
+  endif()
+
   if(TARGET POLISH)
     return()
   endif()
@@ -129,6 +137,10 @@ function(idle_project_add_target_polish PLUGIN_SOURCE_DIR)
 endfunction()
 
 function(idle_project_add_target_start CONFIG_FILE)
+  if(NOT CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+    return()
+  endif()
+
   if(TARGET START)
     return()
   endif()
