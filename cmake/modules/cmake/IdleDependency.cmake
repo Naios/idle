@@ -67,7 +67,8 @@ function(idle_dependency PACKAGE)
       RENAME
       INSTALL_RUNTIME
       CONFIGURATIONS
-      TARGETS)
+      TARGETS
+      HINTS)
   cmake_parse_arguments(IDLE_DEPENDENCY "${arg_opt}" "${arg_single}"
                         "${arg_multi}" ${ARGN})
 
@@ -117,9 +118,6 @@ function(idle_dependency PACKAGE)
     ${IDLE_DEPENDENCY_FILTER}
     PATCH
     ${IDLE_DEPENDENCY_PATCH})
-
-  set(${LIBRARY_NAME}_DIR "${PACKAGE_LOCATION}")
-  set(${LIBRARY_NAME}_FOUND ON)
 
   if(IDLE_DEPENDENCY_CD)
     set(PACKAGE_WORKING_DIRECTORY "${PACKAGE_LOCATION}/${IDLE_DEPENDENCY_CD}")
@@ -219,6 +217,14 @@ function(idle_dependency PACKAGE)
 
       file(MAKE_DIRECTORY "${BUILD_PACKAGE_LOCATION}")
 
+      # Unhashed args:
+      if(CMAKE_MODULE_PATH)
+        string(REPLACE ";" "\\;" CURRENT_MODULE_PATH "${CMAKE_MODULE_PATH}")
+
+        list(APPEND PACKAGE_COMMAND_LINE_ARGS
+             "-DCMAKE_MODULE_PATH=${CURRENT_MODULE_PATH}")
+      endif()
+
       message(STATUS "Building ${PACKAGE}\n"
                      "     into '${BUILD_PACKAGE_LOCATION}'...")
       foreach(CURRENT_ARG IN LISTS PACKAGE_COMMAND_LINE_ARGS)
@@ -293,26 +299,37 @@ function(idle_dependency PACKAGE)
           "feel free to delete it.")
     endif()
 
+    set(FIND_HINTS)
+    foreach(HINT IN LISTS IDLE_DEPENDENCY_HINTS)
+      list(APPEND FIND_HINTS "${INSTALL_PACKAGE_LOCATION}/${HINT}")
+    endforeach()
+
     set(${LIBRARY_NAME}_DIR "${INSTALL_PACKAGE_LOCATION}")
+    set(${LIBRARY_NAME}_ROOT "${INSTALL_PACKAGE_LOCATION}")
+    set(${LIBRARY_NAME}_FOUND ON)
 
     if(NOT IDLE_DEPENDENCY_NO_FIND_PACKAGE)
-      find_package(${LIBRARY_NAME} REQUIRED HINTS "${INSTALL_PACKAGE_LOCATION}"
-                   PATHS "${INSTALL_PACKAGE_LOCATION}")
-    endif()
+      list(APPEND CMAKE_MODULE_PATH "${INSTALL_PACKAGE_LOCATION}")
 
-    # Pass PACKAGE_DIR and PACKAGE_FOUND downwards
-    set(${LIBRARY_NAME}_DIR
-        "${${LIBRARY_NAME}_DIR}"
-        PARENT_SCOPE)
-    set(${LIBRARY_NAME}_FOUND
-        ${${LIBRARY_NAME}_FOUND}
-        PARENT_SCOPE)
+      find_package(
+        ${LIBRARY_NAME}
+        REQUIRED
+        HINTS
+        "${INSTALL_PACKAGE_LOCATION}"
+        ${FIND_HINTS}
+        PATHS
+        "${INSTALL_PACKAGE_LOCATION}")
+    endif()
 
   else() # NOT IDLE_DEPENDENCY_EXTERNAL
     cmake_policy(PUSH)
     cmake_policy(SET CMP0077 NEW)
     set(OLD_CMAKE_POLICY_DEFAULT_CMP0077 ${CMAKE_POLICY_DEFAULT_CMP0077})
     set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+
+    set(${LIBRARY_NAME}_DIR "${PACKAGE_LOCATION}")
+    set(${LIBRARY_NAME}_ROOT "${PACKAGE_LOCATION}")
+    set(${LIBRARY_NAME}_FOUND ON)
 
     # Set all CMake options that were specified
     foreach(CURRENT_OPTION IN LISTS IDLE_DEPENDENCY_OPTIONS)
@@ -335,14 +352,6 @@ function(idle_dependency PACKAGE)
     set(CMAKE_POLICY_DEFAULT_CMP0077 ${OLD_CMAKE_POLICY_DEFAULT_CMP0077})
     cmake_policy(POP)
 
-    # Pass PACKAGE_DIR and PACKAGE_FOUND downwards
-    set(${LIBRARY_NAME}_DIR
-        "{${LIBRARY_NAME}_DIR}"
-        PARENT_SCOPE)
-    set(${LIBRARY_NAME}_FOUND
-        ${${LIBRARY_NAME}_FOUND}
-        PARENT_SCOPE)
-
     if(TARGET ${LIBRARY_NAME})
       get_target_property(LIBRARY_TARGET_TYPE ${LIBRARY_NAME} TYPE)
       if(NOT LIBRARY_TARGET_TYPE STREQUAL "INTERFACE_LIBRARY")
@@ -353,18 +362,30 @@ function(idle_dependency PACKAGE)
 
   if(IDLE_DEPENDENCY_INSTALL_RUNTIME)
     foreach(CURRENT_INSTALL_RUNTIME IN LISTS IDLE_DEPENDENCY_INSTALL_RUNTIME)
-      if(NOT TARGET "${CURRENT_INSTALL_RUNTIME}")
-        message(FATAL_ERROR "Target ${CURRENT_INSTALL_RUNTIME} listed as "
-                            "INSTALL_RUNTIME parameter does not exist!")
-      endif()
-
-      get_target_property(TARGET_TYPE ${CURRENT_INSTALL_RUNTIME} TYPE)
-      if(TARGET_TYPE STREQUAL SHARED_LIBRARY)
-        install(FILES "$<TARGET_FILE:${CURRENT_INSTALL_RUNTIME}>"
-                DESTINATION "${CMAKE_INSTALL_PREFIX}")
+      if(TARGET "${CURRENT_INSTALL_RUNTIME}")
+        get_target_property(TARGET_TYPE ${CURRENT_INSTALL_RUNTIME} TYPE)
+        if(TARGET_TYPE STREQUAL SHARED_LIBRARY)
+          install(FILES "$<TARGET_FILE:${CURRENT_INSTALL_RUNTIME}>"
+                  DESTINATION "${CMAKE_INSTALL_PREFIX}")
+        endif()
       endif()
     endforeach()
   endif()
+
+  # Pass PACKAGE_DIR and PACKAGE_FOUND downwards
+  set(${LIBRARY_NAME}_DIR
+      "${${LIBRARY_NAME}_DIR}"
+      PARENT_SCOPE)
+  set(${LIBRARY_NAME}_ROOT
+      "${${LIBRARY_NAME}_ROOT}"
+      PARENT_SCOPE)
+  set(${LIBRARY_NAME}_FOUND
+      "${${LIBRARY_NAME}_FOUND}"
+      PARENT_SCOPE)
+
+  message("- ${LIBRARY_NAME}_DIR ${${LIBRARY_NAME}_DIR}")
+  message("- ${LIBRARY_NAME}_ROOT ${${LIBRARY_NAME}_ROOT}")
+  message("- ${LIBRARY_NAME}_FOUND ${${LIBRARY_NAME}_FOUND}")
 endfunction()
 
 function(idle_header_dependency PACKAGE)
