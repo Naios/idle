@@ -50,7 +50,7 @@ function(_idle_check_dependency_version LIBRARY_NAME PACKAGE_VERSION
   endif()
 endfunction()
 
-function(idle_dependency PACKAGE)
+function(_idle_dependency_ex PACKAGE)
   set(arg_opt NO_LICENSE_FILE EXTERNAL NO_FIND_PACKAGE DRY_RUN)
   set(arg_single
       CD
@@ -309,16 +309,10 @@ function(idle_dependency PACKAGE)
     set(${LIBRARY_NAME}_FOUND ON)
 
     if(NOT IDLE_DEPENDENCY_NO_FIND_PACKAGE)
-      list(APPEND CMAKE_MODULE_PATH "${INSTALL_PACKAGE_LOCATION}")
-
-      find_package(
-        ${LIBRARY_NAME}
-        REQUIRED
-        HINTS
-        "${INSTALL_PACKAGE_LOCATION}"
-        ${FIND_HINTS}
-        PATHS
-        "${INSTALL_PACKAGE_LOCATION}")
+      set(IDLE_DEPENDENCY_FIND_PACKAGE_ARGS
+          "${LIBRARY_NAME}" "REQUIRED" "HINTS" ${FIND_HINTS} "PATHS"
+          "${INSTALL_PACKAGE_LOCATION}"
+          PARENT_SCOPE)
     endif()
 
   else() # NOT IDLE_DEPENDENCY_EXTERNAL
@@ -382,11 +376,16 @@ function(idle_dependency PACKAGE)
   set(${LIBRARY_NAME}_FOUND
       "${${LIBRARY_NAME}_FOUND}"
       PARENT_SCOPE)
-
-  message("- ${LIBRARY_NAME}_DIR ${${LIBRARY_NAME}_DIR}")
-  message("- ${LIBRARY_NAME}_ROOT ${${LIBRARY_NAME}_ROOT}")
-  message("- ${LIBRARY_NAME}_FOUND ${${LIBRARY_NAME}_FOUND}")
 endfunction()
+
+macro(idle_dependency _IDLE_PACKAGE)
+  _idle_dependency_ex("${_IDLE_PACKAGE}" ${ARGN})
+
+  if(IDLE_DEPENDENCY_FIND_PACKAGE_ARGS)
+    find_package(${IDLE_DEPENDENCY_FIND_PACKAGE_ARGS})
+    unset(IDLE_DEPENDENCY_FIND_PACKAGE_ARGS)
+  endif()
+endmacro()
 
 function(idle_header_dependency PACKAGE)
   set(arg_opt INSTALL EXPORT NO_LICENSE_FILE)
