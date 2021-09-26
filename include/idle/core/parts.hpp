@@ -39,6 +39,7 @@
 #include <idle/core/parts/introduce.hpp>
 #include <idle/core/parts/link.hpp>
 #include <idle/core/parts/listener.hpp>
+#include <idle/core/parts/poolable_executor.hpp>
 #include <idle/core/parts/singleton.hpp>
 #include <idle/core/parts/storage.hpp>
 #include <idle/core/parts/thread.hpp>
