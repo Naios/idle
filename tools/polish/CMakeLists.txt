@@ -74,6 +74,7 @@ set_target_properties(
 
 install(
   TARGETS polish
+  EXPORT "${PROJECT_NAME}Targets"
   INCLUDES
   DESTINATION "include"
   ARCHIVE DESTINATION "lib"
