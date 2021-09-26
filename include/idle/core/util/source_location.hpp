@@ -105,9 +105,7 @@ private:
 } // namespace idle
 
 #define IDLE_CURRENT_SOURCE_LOCATION()                                         \
-  ::idle::SourceLocation {                                                     \
-    IDLE_DETAIL_FILE_NAME, IDLE_DETAIL_FILE_LINE,                              \
-        IDLE_DETAIL_PRETTY_FUNCTION_NAME                                       \
-  }
+  (::idle::SourceLocation{IDLE_DETAIL_FILE_NAME, IDLE_DETAIL_FILE_LINE,        \
+                          IDLE_DETAIL_PRETTY_FUNCTION_NAME})
 
 #endif // IDLE_CORE_UTIL_SOURCE_LOCATION_HPP_INCLUDED

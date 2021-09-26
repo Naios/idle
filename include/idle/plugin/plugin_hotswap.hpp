@@ -64,12 +64,12 @@ public:
     /// The CMake additional module directory
     ///
     /// \note defaults to `${executable_dir}/../share/cmake` if left empty
-    std::string module_dir{"../share/cmake"};
+    std::string module_dir;
 
     /// The directory the source is built to
     ///
     /// \note defaults to `${source_dir}/build` if left empty
-    std::string build_dir{"../project/build"};
+    std::string build_dir;
 
     /// Defines whether artifacts shall be cleaned on start.
     ///
