@@ -29,8 +29,7 @@ using namespace idle;
 
 class HelloService final : public Implements<Autostarted> {
 public:
-  explicit HelloService(Inheritance inh)
-    : Implements<Autostarted>(std::move(inh)) {}
+  using Super::Super;
 
   continuable<> onStart() override {
     return async([this] {

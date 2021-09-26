@@ -46,17 +46,21 @@ public:
   explicit PoolableExecutor(Service& owner);
   ~PoolableExecutor() override;
 
-  /// Sets the current thread as the one where work is dispatched
+  /// Sets the current thread as the active one, where work is dispatched.
   ///
   /// \attention Setting different threads than the active thread
   ///            during the same lifecycle of this object is not supported.
   void setRunningFromThisThread() noexcept;
 
-  /// Dispatches all outstanding work on the current thread
+  /// Dispatches all outstanding work on the current thread.
+  ///
+  /// \attention In case an active thread is set, this method must be invoked
+  ///            from the active thead.
   void pool();
 
-  /// Returns true if the current thread is where the executor is dispatched
-  bool isCurrentThread() const noexcept;
+  /// Returns true if the current thread is the active thread,
+  /// where the executor is dispatched on.
+  bool isThisThread() const noexcept;
 
   Service& owner() noexcept override {
     return owner_;
@@ -77,7 +81,6 @@ private:
 
   IDLE_PART
 };
-
 } // namespace idle
 
 #endif // IDLE_CORE_PARTS_POOLABLE_EXECUTOR_HPP_INCLUDED

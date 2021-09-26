@@ -29,6 +29,8 @@
 #include <idle/core/export.hpp>
 #include <idle/core/part.hpp>
 
+#include <idle/core/service.hpp> // Temp
+
 namespace idle {}
 
 #endif // IDLE_CORE_INTERFACE_HPP_INCLUDED

@@ -97,9 +97,7 @@ function(idle_project_add_plugins PLUGIN_SOURCE_DIR)
 endfunction()
 
 function(idle_project_add_target_polish PLUGIN_SOURCE_DIR)
-  if(NOT CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
-    return()
-  endif()
+  find_package(Idle REQUIRED)
 
   if(NOT TARGET idle::polish)
     return()
@@ -127,12 +125,20 @@ function(idle_project_add_target_polish PLUGIN_SOURCE_DIR)
     endif()
   endforeach()
 
+  if(NOT CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+    set(POLISH_POStFIX "_${PROJECT_NAME}")
+  else()
+    set(POLISH_POStFIX)
+  endif()
+
   if(POLISH_ARGS)
     add_custom_target(
-      POLISH
+      POLISH${POLISH_POStFIX}
       COMMAND $<TARGET_FILE:idle::polish> #
               ${POLISH_ARGS}
       WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+
+    set_target_properties(POLISH${POLISH_POStFIX} PROPERTIES FOLDER "scripts")
   endif()
 endfunction()
 
@@ -162,4 +168,6 @@ function(idle_project_add_target_start CONFIG_FILE)
       USES_TERMINAL
       WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
   endif()
+
+  set_target_properties(START PROPERTIES FOLDER "scripts")
 endfunction()

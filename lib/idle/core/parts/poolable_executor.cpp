@@ -71,7 +71,7 @@ void PoolableExecutor::setRunningFromThisThread() noexcept {
 void PoolableExecutor::pool() {
   IDLE_ASSERT(((impl_->this_thread_.load(std::memory_order_acquire) ==
                 std::thread::id{}) ||
-               isCurrentThread()) &&
+               isThisThread()) &&
               "Used pool from a different thread than the active one!");
 
   work w;
@@ -81,7 +81,7 @@ void PoolableExecutor::pool() {
   }
 }
 
-bool PoolableExecutor::isCurrentThread() const noexcept {
+bool PoolableExecutor::isThisThread() const noexcept {
   IDLE_ASSERT(impl_);
 
   return impl_->this_thread_.load(std::memory_order_relaxed) ==
@@ -99,7 +99,7 @@ void PoolableExecutor::onImportUnlock() noexcept {
 bool PoolableExecutor::can_dispatch_inplace() const noexcept {
   IDLE_ASSERT(impl_);
 
-  return owner().state().isRunning() && isCurrentThread();
+  return owner().state().isRunning() && isThisThread();
 }
 
 void PoolableExecutor::queue(work&& work) noexcept {
