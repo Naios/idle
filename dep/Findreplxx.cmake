@@ -25,7 +25,7 @@
 include(IdleDependency)
 
 idle_dependency(
-  "Naios/replxx@35e4bfa6db7ca367bbc8772630649cabac4ae0d4" #
+  "AmokHuginnsson/replxx@0ff224b83145768785b4bf7c1d2b5ec0a9d28b30" #
   FILTER
   "src"
   "include"
