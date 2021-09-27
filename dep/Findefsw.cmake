@@ -25,7 +25,7 @@
 include(IdleDependency)
 
 idle_dependency(
-  "SpartanJ/efsw@3905059f49aa268ccf41461df7331de84d4da7e2" #
+  "SpartanJ/efsw@c42e78632d47c5ec8c49a9b48392a952ec94cf41" #
   SUBDIRECTORY
   "${CMAKE_CURRENT_LIST_DIR}/efsw" #
   FILTER
