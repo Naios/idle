@@ -127,6 +127,8 @@ target_include_directories(
 
 target_link_libraries(efsw PRIVATE idle-dep-base)
 
+target_compile_definitions(efsw PRIVATE EFSW_USE_CXX11)
+
 if(BUILD_SHARED_LIBS)
   set_property(TARGET efsw PROPERTY POSITION_INDEPENDENT_CODE ON)
 endif()
