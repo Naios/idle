@@ -23,8 +23,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef IDLE_CORE_PARTS_POOLABLE_EXECUTOR_HPP_INCLUDED
-#define IDLE_CORE_PARTS_POOLABLE_EXECUTOR_HPP_INCLUDED
+#ifndef IDLE_CORE_PARTS_POLLABLE_EXECUTOR_HPP_INCLUDED
+#define IDLE_CORE_PARTS_POLLABLE_EXECUTOR_HPP_INCLUDED
 
 #include <idle/core/api.hpp>
 #include <idle/core/fwd.hpp>
@@ -33,18 +33,18 @@
 #include <idle/core/util/executor_facade.hpp>
 
 namespace idle {
-/// Represents a poolable executor that can receive work from
-/// any thread and dispatches the work when PoolableExecutor::pool is called.
-class IDLE_API(idle) PoolableExecutor final
+/// Represents a pollable executor that can receive work from
+/// any thread and dispatches the work when PollableExecutor::pool is called.
+class IDLE_API(idle) PollableExecutor final
   : public Import,
-    public ExecutorFacade<PoolableExecutor> {
+    public ExecutorFacade<PollableExecutor> {
 
   class Impl;
-  friend class ExecutorFacade<PoolableExecutor>;
+  friend class ExecutorFacade<PollableExecutor>;
 
 public:
-  explicit PoolableExecutor(Service& owner);
-  ~PoolableExecutor() override;
+  explicit PollableExecutor(Service& owner);
+  ~PollableExecutor() override;
 
   /// Sets the current thread as the active one, where work is dispatched.
   ///
@@ -56,7 +56,7 @@ public:
   ///
   /// \attention In case an active thread is set, this method must be invoked
   ///            from the active thead.
-  void pool();
+  void poll();
 
   /// Returns true if the current thread is the active thread,
   /// where the executor is dispatched on.
@@ -83,4 +83,4 @@ private:
 };
 } // namespace idle
 
-#endif // IDLE_CORE_PARTS_POOLABLE_EXECUTOR_HPP_INCLUDED
+#endif // IDLE_CORE_PARTS_POLLABLE_EXECUTOR_HPP_INCLUDED

@@ -26,12 +26,12 @@
 #include <atomic>
 #include <thread>
 #include <concurrentqueue/concurrentqueue.h>
-#include <idle/core/parts/poolable_executor.hpp>
+#include <idle/core/parts/pollable_executor.hpp>
 #include <idle/core/service.hpp>
 #include <idle/core/util/assert.hpp>
 
 namespace idle {
-class PoolableExecutor::Impl final {
+class PollableExecutor::Impl final {
 public:
   Impl()
     : consumer_token_(queue_) {}
@@ -44,21 +44,21 @@ public:
   moodycamel::ConcurrentQueue<work>::consumer_token_t consumer_token_;
 };
 
-PoolableExecutor::PoolableExecutor(Service& owner)
+PollableExecutor::PollableExecutor(Service& owner)
   : Import(owner)
   , owner_(owner)
   , impl_(new Impl()) {
   IDLE_ASSERT(impl_);
 }
 
-PoolableExecutor::~PoolableExecutor() {
+PollableExecutor::~PollableExecutor() {
   IDLE_ASSERT(impl_);
 
   delete impl_;
   impl_ = nullptr;
 }
 
-void PoolableExecutor::setRunningFromThisThread() noexcept {
+void PollableExecutor::setRunningFromThisThread() noexcept {
   IDLE_ASSERT(impl_);
 
   IDLE_ASSERT(impl_->this_thread_.load(std::memory_order_acquire) ==
@@ -68,7 +68,7 @@ void PoolableExecutor::setRunningFromThisThread() noexcept {
                             std::memory_order_release);
 }
 
-void PoolableExecutor::pool() {
+void PollableExecutor::poll() {
   IDLE_ASSERT(((impl_->this_thread_.load(std::memory_order_acquire) ==
                 std::thread::id{}) ||
                isThisThread()) &&
@@ -81,14 +81,14 @@ void PoolableExecutor::pool() {
   }
 }
 
-bool PoolableExecutor::isThisThread() const noexcept {
+bool PollableExecutor::isThisThread() const noexcept {
   IDLE_ASSERT(impl_);
 
   return impl_->this_thread_.load(std::memory_order_relaxed) ==
          std::this_thread::get_id();
 }
 
-void PoolableExecutor::onImportUnlock() noexcept {
+void PollableExecutor::onImportUnlock() noexcept {
   IDLE_ASSERT(impl_);
 
   impl_->this_thread_.store(std::thread::id{}, std::memory_order_release);
@@ -96,13 +96,13 @@ void PoolableExecutor::onImportUnlock() noexcept {
   IDLE_ASSERT(impl_->queue_.size_approx() == 0U);
 }
 
-bool PoolableExecutor::can_dispatch_inplace() const noexcept {
+bool PollableExecutor::can_dispatch_inplace() const noexcept {
   IDLE_ASSERT(impl_);
 
   return owner().state().isRunning() && isThisThread();
 }
 
-void PoolableExecutor::queue(work&& work) noexcept {
+void PollableExecutor::queue(work&& work) noexcept {
   IDLE_ASSERT(impl_);
 
   if (owner().state().isRunning()) {
