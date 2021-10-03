@@ -34,6 +34,7 @@
 #include <idle/core/support.hpp>
 #include <idle/core/util/assert.hpp>
 #include <idle/core/util/bitset.hpp>
+#include <idle/core/util/deref.hpp>
 #include <idle/core/util/executor_facade.hpp>
 
 namespace idle {
@@ -55,8 +56,8 @@ public:
     return owner_;
   }
 
-  Executor& executor() noexcept {
-    return executor_;
+  auto& executor() noexcept {
+    return deref(executor_);
   }
 
 protected:

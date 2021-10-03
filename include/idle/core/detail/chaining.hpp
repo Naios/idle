@@ -29,6 +29,7 @@
 #include <memory>
 #include <type_traits>
 #include <utility>
+#include <idle/core/util/assert.hpp>
 #include <idle/core/util/meta.hpp>
 
 namespace idle {
@@ -72,6 +73,16 @@ struct def_chain_traits {
       "const correctness. Consider implementing an operator-> for both cases "
       "or qualify operator-> as const!");
 };
+
+template <typename T>
+T* chain(T* obj) noexcept {
+  IDLE_ASSERT(obj);
+  return obj;
+}
+template <typename T>
+decltype(auto) chain(T& obj) noexcept {
+  return chain_trait<unrefcv_t<T>>::do_chain(obj);
+}
 } // namespace detail
 } // namespace idle
 

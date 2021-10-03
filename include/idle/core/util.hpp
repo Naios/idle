@@ -31,6 +31,7 @@
 #include <idle/core/util/assert.hpp>
 #include <idle/core/util/bitset.hpp>
 #include <idle/core/util/checked.hpp>
+#include <idle/core/util/deref.hpp>
 #include <idle/core/util/enum.hpp>
 #include <idle/core/util/enum_map.hpp>
 #include <idle/core/util/enumerate.hpp>

@@ -69,12 +69,11 @@ public:
     return owner_;
   }
 
-protected:
-  void onImportUnlock() noexcept override;
-
-private:
   bool can_dispatch_inplace() const noexcept;
   void queue(work&& work) noexcept;
+
+protected:
+  void onImportUnlock() noexcept override;
 
   Service& owner_;
   Impl* impl_;

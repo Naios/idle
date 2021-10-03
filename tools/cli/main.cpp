@@ -64,7 +64,7 @@ private:
 
   Component<PluginHotSwap> plugin_hotswap_{*this};
 
-  Var<Config, CliTool> config_{*this, "idle"};
+  Var<Config> config_{*this, "idle"};
 
   IDLE_SERVICE
 };
